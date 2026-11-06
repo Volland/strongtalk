@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Typing Smalltalk without breaking it — Strongtalk</title>
+  <meta name="description" content="Strongtalk's optional type system: annotations, protocols, generics, block types and a type checker that never changes how code runs.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="../"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a href="history.html">History</a>
+        <a class="on" href="types.html">Types</a>
+        <a href="vm.html">The VM</a>
+        <a href="this-edition.html">This edition</a>
+        <a href="https://github.com/Volland/strongtalk">GitHub</a>
+        <a class="cta" href="../try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="article">
+    <span class="kicker">Language</span>
+    <h1>Typing Smalltalk without breaking it</h1>
+    <p class="dek">Strongtalk's types are optional, written in angle brackets, and checked separately from running
+      the program. Removing every annotation leaves a program that behaves exactly the same.</p>
+
+    <h2>Types in angle brackets</h2>
+    <p>A type is written after the name it describes: arguments, temporaries, instance variables and block
+      parameters. A method's result type follows a caret.</p>
+<pre><code>at: index &lt;Int&gt; put: value &lt;E&gt; ^&lt;E&gt;
+    | old &lt;E&gt; |
+    old := self at: index.
+    ...</code></pre>
+    <p>Untyped code is simply <i>dynamic</i>: the checker trusts it. You can add types one method at a time, so a
+      large untyped program can be typed gradually.</p>
+
+    <h2>Protocols, not classes</h2>
+    <p>In most typed object-oriented languages a type is a class. Strongtalk instead separated the two: a type
+      describes the messages an object understands (its <i>protocol</i>), and an object conforms to it by
+      understanding those messages, whatever its class. That fits Smalltalk, where unrelated classes often
+      implement the same messages. <code>Int</code>, <code>Str</code> and <code>Bool</code> are such types.</p>
+
+    <h2>Self, Instance and unions</h2>
+    <table class="t">
+      <tr><th>Write</th><th>Means</th></tr>
+      <tr><td><code>&lt;Self&gt;</code></td><td>the receiver's own type, so subclasses get the right result type for free</td></tr>
+      <tr><td><code>&lt;Instance&gt;</code></td><td>on the class side, an instance of this class (<code>new ^&lt;Instance&gt;</code>)</td></tr>
+      <tr><td><code>&lt;Int | Str&gt;</code></td><td>either type</td></tr>
+      <tr><td><code>&lt;[Int, ^Bool]&gt;</code></td><td>a block taking an Int and answering a Boolean</td></tr>
+      <tr><td><code>&lt;Array[Str]&gt;</code></td><td>a generic class applied to a type</td></tr>
+      <tr><td><code>guaranteed &lt;Int&gt; expr</code></td><td>tell the checker to trust that <code>expr</code> is an Int</td></tr>
+    </table>
+
+    <h2>Generics</h2>
+    <p>Collections are generic. A class declares its type parameters with <code>Generic forAll:</code>:</p>
+<pre><code>Delta define: #OrderedCollection as: (
+    Generic forAll: 'E' body: (
+        (Class subclassOf: 'SequenceableCollection[E]'
+               instanceVariables: 'array &lt;Array[E]&gt; firstIndex &lt;Int&gt; lastIndex &lt;Int&gt;')))</code></pre>
+    <p>The original also let methods describe how their result type depends on their arguments, with
+      inference clauses written in <code>{where ...}</code>; that is how <code>Int + Int</code> could be an
+      <code>Int</code> while <code>Int + Float</code> is a <code>Float</code>.</p>
+
+    <h2>What the checker reports</h2>
+<pre><code>| n &lt;Int&gt; |
+n := 'seven'.          "assigning String to 'n', which is declared Integer"
+n squared: 3           "Integer does not understand #squared:"
+
+(BankAccount owner: 'Ada') deposit: 'lots'
+                       "argument 1 of #deposit:: String is not a Integer"</code></pre>
+    <p>None of this stops the program from running. In Strongtalk, as in every Smalltalk, the run-time system
+      catches real errors with <code>doesNotUnderstand:</code>. The checker's job is to tell you about them
+      early.</p>
+
+    <h2>Try it</h2>
+    <p>Open the <a href="../try/">environment</a>, choose <b>Demos › Type checking tour</b>, put the cursor in an
+      example and press <b>Typecheck</b>.</p>
+
+    <p class="note">The type checker in this edition is simpler than the original: it follows the class hierarchy
+      rather than matching protocols structurally, and it uses built-in rules for arithmetic instead of
+      <code>{where ...}</code> clauses.</p>
+
+    <div class="next"><a href="history.html">← History</a><a href="vm.html">Next: the virtual machine →</a></div>
+  </article>
+
+  <footer class="foot"><div class="in"><span>Strongtalk — an independent Rust/WebAssembly edition.</span><span class="links"><a href="../try/">Try it</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span></div></footer>
+</body>
+</html>

@@ -1,0 +1,217 @@
+"Examples to read, run and change: typed classes, benchmarks and pictures."
+
+Delta define: #BankAccount as: (
+(Class subclassOf: 'Object' instanceVariables: 'owner <Str> balance <Int> history <OrderedCollection[Int]>')) !
+(Delta mirrorFor: #BankAccount) group: 'examples' !
+(Delta mirrorFor: #BankAccount) comment: 'A small typed class. Try: (BankAccount owner: ''Ada'') deposit: 100; withdraw: 30; yourself' !
+
+! (Delta mirrorFor: #BankAccount) classSide methodsFor: 'instance creation' !
+
+owner: name <Str> ^<Instance>
+	^self new setOwner: name
+! !
+
+! (Delta mirrorFor: #BankAccount) methodsFor: 'accessing' !
+
+setOwner: name <Str> ^<Self>
+	owner := name.
+	balance := 0.
+	history := OrderedCollection new
+!
+
+owner ^<Str>
+	^owner
+!
+
+balance ^<Int>
+	^balance
+!
+
+history ^<OrderedCollection[Int]>
+	^history
+! !
+
+! (Delta mirrorFor: #BankAccount) methodsFor: 'transactions' !
+
+deposit: amount <Int> ^<Self>
+	amount <= 0 ifTrue: [^self error: 'deposits must be positive'].
+	balance := balance + amount.
+	history add: amount
+!
+
+withdraw: amount <Int> ^<Self>
+	amount > balance ifTrue: [^self error: 'insufficient funds'].
+	balance := balance - amount.
+	history add: amount negated
+! !
+
+! (Delta mirrorFor: #BankAccount) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: owner; nextPutAll: '''s account: '; print: balance
+! !
+
+Delta define: #Benchmark as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Benchmark) group: 'examples' !
+(Delta mirrorFor: #Benchmark) comment: 'Small programs for timing the interpreter. Try: Benchmark runAll' !
+
+! (Delta mirrorFor: #Benchmark) classSide methodsFor: 'benchmarks' !
+
+fib: n <Int> ^<Int>
+	n < 2 ifTrue: [^n].
+	^(self fib: n - 1) + (self fib: n - 2)
+!
+
+sieve: limit <Int> ^<Int>
+	"How many primes are there up to limit?"
+	| flags <Array[Boolean]> count <Int> |
+	flags := Array new: limit withAll: true.
+	count := 0.
+	2 to: limit do: [:i <Int> |
+		(flags at: i) ifTrue: [
+			count := count + 1.
+			i + i to: limit by: i do: [:k <Int> | flags at: k put: false]]].
+	^count
+!
+
+towers: n <Int> from: a <Int> to: b <Int> via: c <Int> ^<Int>
+	n = 0 ifTrue: [^0].
+	^(self towers: n - 1 from: a to: c via: b) + 1 + (self towers: n - 1 from: c to: b via: a)
+!
+
+sortRandom: n <Int> ^<Boolean>
+	| r <Random> a <Array> |
+	r := Random new.
+	a := (1 to: n) collect: [:i <Int> | r nextInt: 1000000].
+	a sort.
+	^(1 to: n - 1) allSatisfy: [:i <Int> | (a at: i) <= (a at: i + 1)]
+!
+
+dictionaryWords: n <Int> ^<Int>
+	| d <Dictionary[Str, Int]> |
+	d := Dictionary new.
+	1 to: n do: [:i <Int> | d at: (i \\ 1000) printString put: i].
+	^d size
+!
+
+report: name <Str> run: aBlock <[^Object]> ^<Int>
+	| result <Object> ms <Int> |
+	ms := Time millisecondsToRun: [result := aBlock value].
+	Transcript show: name; show: ' = '; print: result; show: '   ('; print: ms; show: ' ms)'; cr.
+	^ms
+!
+
+runAll ^<Int>
+	| total <Int> sends <Int> |
+	sends := Smalltalk sendCount.
+	Transcript show: 'Strongtalk benchmarks'; cr.
+	total := 0.
+	total := total + (self report: 'fib: 25' run: [self fib: 25]).
+	total := total + (self report: 'sieve: 200000' run: [self sieve: 200000]).
+	total := total + (self report: 'towers of Hanoi (18 discs)' run: [self towers: 18 from: 1 to: 3 via: 2]).
+	total := total + (self report: 'sort 20000 random numbers' run: [self sortRandom: 20000]).
+	total := total + (self report: 'dictionary of 50000 keys' run: [self dictionaryWords: 50000]).
+	total := total + (self report: '200 factorial digits' run: [200 factorial printString size]).
+	Transcript show: 'total: '; print: total; show: ' ms, '; print: Smalltalk sendCount - sends; show: ' message sends'; cr.
+	^total
+! !
+
+Delta define: #Mandelbrot as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Mandelbrot) group: 'examples' !
+(Delta mirrorFor: #Mandelbrot) comment: 'Draws the Mandelbrot set. Mandelbrot show uses the VM primitive (as the original did); Mandelbrot showInSmalltalk computes every point in Smalltalk.' !
+
+! (Delta mirrorFor: #Mandelbrot) classSide methodsFor: 'drawing' !
+
+colorFor: n <Int> limit: limit <Int> ^<Int>
+	| t <Float> |
+	n >= (limit - 1) ifTrue: [^0].
+	t := n asFloat / limit asFloat.
+	^Canvas
+		red: (9 * (1 - t) * t * t * t * 255) truncated
+		green: (15 * (1 - t) * (1 - t) * t * t * 255) truncated
+		blue: (8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255) truncated
+!
+
+iterationsAtRe: re <Float> im: im <Float> limit: limit <Int> ^<Int>
+	"The same steps as the VM primitive (0x4ccbd0): z starts at c, at most limit - 1 steps,
+	stopping once x*x + y*y > 4.0."
+	| x <Float> y <Float> x2 <Float> y2 <Float> i <Int> |
+	x := re. y := im. x2 := re * re. y2 := im * im. i := 0.
+	[i < (limit - 1) and: [x2 + y2 <= 4.0]] whileTrue: [
+		i := i + 1.
+		y := 2.0 * x * y + im.
+		x := x2 - y2 + re.
+		x2 := x * x.
+		y2 := y * y].
+	^i
+!
+
+drawOn: c <Canvas> limit: limit <Int> usePrimitive: prim <Boolean> ^<Canvas>
+	| re <Float> im <Float> n <Int> |
+	0 to: c height - 1 do: [:py <Int> |
+		im := py asFloat / c height asFloat * 2.4 - 1.2.
+		0 to: c width - 1 do: [:px <Int> |
+			re := px asFloat / c width asFloat * 3.2 - 2.2.
+			n := prim
+				ifTrue: [{{primitiveMandelbrotAtRe: re im: im iterate: limit ifFail: [:err <Symbol> | 0]}}]
+				ifFalse: [self iterationsAtRe: re im: im limit: limit].
+			c setX: px y: py rgb: (self colorFor: n limit: limit)]].
+	^c
+!
+
+show ^<Canvas>
+	^(self drawOn: (Canvas width: 320 height: 240 title: 'Mandelbrot (primitive)') limit: 200 usePrimitive: true) show
+!
+
+showInSmalltalk ^<Canvas>
+	^(self drawOn: (Canvas width: 320 height: 240 title: 'Mandelbrot (Smalltalk)') limit: 100 usePrimitive: false) show
+! !
+
+Delta define: #Shapes as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Shapes) group: 'examples' !
+(Delta mirrorFor: #Shapes) comment: 'Turtle drawings with Pen. Try: Shapes spiral, Shapes flower, Shapes tree.' !
+
+! (Delta mirrorFor: #Shapes) classSide methodsFor: 'drawing' !
+
+spiral ^<Pen>
+	| pen <Pen> |
+	pen := Pen new: 300.
+	1 to: 180 do: [:i <Int> |
+		pen color: (Canvas red: i * 7 \\ 256 green: 80 blue: 255 - (i * 7 \\ 256)).
+		pen go: i * 1.6; turn: 89].
+	^pen show
+!
+
+flower ^<Pen>
+	| pen <Pen> |
+	pen := Pen new: 300.
+	36 timesRepeat: [
+		pen color: Canvas red.
+		4 timesRepeat: [pen go: 70; turn: 90].
+		pen turn: 10].
+	^pen show
+!
+
+branch: pen <Pen> length: len <Number> ^<Pen>
+	len < 6 ifTrue: [^pen].
+	pen color: (len < 15 ifTrue: [Canvas green] ifFalse: [Canvas red: 110 green: 70 blue: 30]).
+	pen go: len.
+	pen turn: -25.
+	self branch: pen length: len * 0.7.
+	pen turn: 50.
+	self branch: pen length: len * 0.7.
+	pen turn: -25.
+	pen up; go: len negated; down.
+	^pen
+!
+
+tree ^<Pen>
+	| pen <Pen> |
+	pen := Pen new: 300.
+	pen up; go: -110; down.
+	self branch: pen length: 70.
+	^pen show
+! !

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strongtalk</title>
+  <meta name="description" content="Strongtalk, the typed Smalltalk, running in your browser: a Rust virtual machine compiled to WebAssembly with workspaces, class browsers and a type checker.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23164f86'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23ffd34d' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="desktop" aria-label="Strongtalk desktop">
+    <div id="boot" class="boot">
+      <div class="boot-logo">S</div>
+      <div class="boot-title">Strongtalk</div>
+      <div class="boot-sub">Starting the virtual machine&hellip;</div>
+    </div>
+  </main>
+  <footer id="taskbar">
+    <button id="start" class="task-start" title="Strongtalk menu">Strongtalk</button>
+    <div id="tasks" class="tasks"></div>
+    <button id="stopbtn" class="stopbtn" title="Interrupt the running program (Ctrl+.)" hidden>&#9632; Stop</button>
+    <div id="vmstatus" class="vmstatus"><span class="dot"></span><span class="label">loading</span></div>
+  </footer>
+  <input type="file" id="filepick" accept=".dlt,.st,.txt,.cs" hidden>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

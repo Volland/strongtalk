@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>From Self to HotSpot: the story of Strongtalk</title>
+  <meta name="description" content="How a small team built a typed Smalltalk with a very fast virtual machine, and where its ideas went next.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="../"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a class="on" href="history.html">History</a>
+        <a href="types.html">Types</a>
+        <a href="vm.html">The VM</a>
+        <a href="this-edition.html">This edition</a>
+        <a href="https://github.com/Volland/strongtalk">GitHub</a>
+        <a class="cta" href="../try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="article">
+    <span class="kicker">History</span>
+    <h1>From Self to HotSpot</h1>
+    <p class="dek">A typed Smalltalk, a famously fast virtual machine, and a small team whose ideas ended up in
+      languages that hundreds of millions of people use.</p>
+
+    <h2>Smalltalk in the early 1990s</h2>
+    <p>By the early 1990s Smalltalk had shown how pleasant programming could be: everything is an object, every
+      action is a message, and the whole system — compiler, debugger, browsers — is written in itself and can be
+      changed while it runs. Businesses liked it for that productivity. Two complaints kept coming up, though.
+      Smalltalk was slow next to C and C++, and in big programs the lack of declared types made code hard to read
+      and easy to break.</p>
+
+    <h2>Two research threads</h2>
+    <p>At Stanford and Sun Labs, the <b>Self</b> project had shown that a dynamically typed language could run
+      fast. Its compilers watched the program run, noticed which kinds of objects actually reached each call
+      site, and generated specialised machine code for the common cases. Urs Hölzle's doctoral work on
+      <i>type feedback</i> and adaptive optimization made this practical.</p>
+    <p>At the same time, Gilad Bracha and David Griswold were working on a type system that would fit Smalltalk
+      rather than fight it: optional, checkable without running the program, and based on the messages an object
+      understands rather than on its class. They described it in <i>Strongtalk: Typechecking Smalltalk in a
+      Production Environment</i> at OOPSLA in 1993.</p>
+
+    <h2>Animorphic Systems</h2>
+    <p>Around 1994 the two threads came together in a small company, Animorphic Systems (its legal name,
+      LongView Technologies, is still printed in the virtual machine's start-up banner). The team included
+      Lars Bak, Gilad Bracha, Steffen Grarup, Robert Griesemer, David Griswold and Urs Hölzle. They built a
+      complete Smalltalk around the new type system and a new virtual machine that combined a fast interpreter
+      with an optimizing compiler driven by type feedback.</p>
+    <blockquote>Strongtalk ran unmodified Smalltalk programs much faster than the commercial Smalltalks of its
+      day — and its types were entirely optional.</blockquote>
+
+    <h2>Sun, Java and HotSpot</h2>
+    <p>Java appeared in 1995 and quickly took the attention Strongtalk might have had. In 1997 Sun Microsystems
+      bought Animorphic. The team's virtual machine techniques went into a new Java VM, which shipped as
+      <b>HotSpot</b> and became the standard Java runtime. Strongtalk itself was set aside.</p>
+
+    <h2>Open source</h2>
+    <p>In 2006 Sun released Strongtalk under a BSD-style licence: the virtual machine's C++ sources, the
+      Smalltalk class library and a Windows build. The program this site's edition was studied from,
+      <code>strongtalk-r200.exe</code>, is one such Windows build of the virtual machine.</p>
+
+    <h2>Where the ideas went</h2>
+    <ul class="timeline">
+      <li><b>Java HotSpot</b> — adaptive optimization and type feedback for the JVM.</li>
+      <li><b>V8</b> — Lars Bak led Google's JavaScript engine, whose hidden classes and inline caches follow the same
+        lineage.</li>
+      <li><b>Dart</b> — designed by Lars Bak and Gilad Bracha; its optional types echo Strongtalk's.</li>
+      <li><b>Newspeak</b> — Gilad Bracha's later language, a direct descendant of Smalltalk and Strongtalk.</li>
+      <li><b>Go</b> — co-designed by Robert Griesemer.</li>
+      <li><b>Gradual typing</b> — TypeScript, Python type hints and others share the idea that types can be optional and
+        separate from how programs run.</li>
+    </ul>
+
+    <h2>A short timeline</h2>
+    <ul class="timeline">
+      <li><b>1987–1991</b> — Self and its optimizing compilers at Stanford and Sun.</li>
+      <li><b>1993</b> — the Strongtalk type system is presented at OOPSLA.</li>
+      <li><b>1994–1996</b> — Animorphic Systems builds the Strongtalk system and VM.</li>
+      <li><b>1997</b> — Sun acquires Animorphic; the VM work becomes HotSpot.</li>
+      <li><b>2006</b> — Strongtalk is released as open source.</li>
+      <li><b>Today</b> — this site: the VM re-built in Rust, running in your browser.</li>
+    </ul>
+
+    <p class="note">Dates and names follow the published papers and the open-source release; the virtual machine
+      binary itself names its authors only as "LongView Technologies LLC" and Sun Microsystems.</p>
+
+    <div class="next"><a href="../">← Home</a><a href="types.html">Next: the type system →</a></div>
+  </article>
+
+  <footer class="foot"><div class="in"><span>Strongtalk — an independent Rust/WebAssembly edition.</span><span class="links"><a href="../try/">Try it</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span></div></footer>
+</body>
+</html>

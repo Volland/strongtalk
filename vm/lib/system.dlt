@@ -1,0 +1,406 @@
+"The environment: Transcript, Smalltalk, time, random numbers, points and canvases."
+
+(Delta mirrorFor: #Class) comment: 'The class of every class''s class side. Send it subclassOf:instanceVariables: to declare a class.' !
+(Delta mirrorFor: #Metaclass) comment: 'The class of metaclasses: Point class class == Metaclass.' !
+(Delta mirrorFor: #SystemDictionary) comment: 'The global namespace. Smalltalk and Delta both name it: Delta define: #Foo as: (...), Smalltalk at: #Foo.' !
+(Delta mirrorFor: #Generic) comment: 'Declares generic classes: Generic forAll: ''E'' body: (Class subclassOf: ''Collection[E]'' ...).' !
+(Delta mirrorFor: #ClassDeclaration) comment: 'What Class subclassOf:instanceVariables: answers, until Delta define:as: turns it into a class.' !
+(Delta mirrorFor: #ClassMirror) comment: 'Reflects on a class for file-in: (Delta mirrorFor: #Point) methodsFor: ''accessing''.' !
+(Delta mirrorFor: #MethodReader) comment: 'Reads the method chunks that follow a methodsFor: during file-in.' !
+
+! (Delta mirrorFor: #SystemDictionary) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'Smalltalk'
+!
+
+version ^<String>
+	^'Strongtalk 2.0 (Rust and WebAssembly edition)'
+!
+
+fileIn: source <String> ^<Int>
+	^{{primitiveFileIn: source ifFail: [:err <Symbol> | self error: 'fileIn: needs a string']}}
+!
+
+sendCount ^<Int>
+	^{{primitiveSendCount}}
+! !
+
+Delta define: #TranscriptStream as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #TranscriptStream) group: 'environment' !
+(Delta mirrorFor: #TranscriptStream) comment: 'The Transcript: the Launcher''s output pane. Transcript show: ''Hello''; cr.' !
+
+! (Delta mirrorFor: #TranscriptStream) methodsFor: 'writing' !
+
+show: anObject <Object> ^<Self>
+	{{primitiveTranscriptShow: (anObject isString ifTrue: [anObject] ifFalse: [anObject displayString]) ifFail: [:err <Symbol> | nil]}}
+!
+
+nextPutAll: anObject <Object> ^<Self>
+	self show: anObject
+!
+
+nextPut: aCharacter <Character> ^<Self>
+	self show: aCharacter asString
+!
+
+print: anObject <Object> ^<Self>
+	self show: anObject printString
+!
+
+display: anObject <Object> ^<Self>
+	self show: anObject displayString
+!
+
+<< anObject <Object> ^<Self>
+	self show: anObject
+!
+
+showCr: anObject <Object> ^<Self>
+	self show: anObject; cr
+!
+
+crShow: anObject <Object> ^<Self>
+	self cr; show: anObject
+!
+
+cr ^<Self>
+	self show: String lf
+!
+
+nl ^<Self>
+	self cr
+!
+
+newLine ^<Self>
+	self cr
+!
+
+tab ^<Self>
+	self show: String tab
+!
+
+space ^<Self>
+	self show: String space
+!
+
+clear ^<Self>
+	{{primitiveTranscriptClear}}
+!
+
+flush ^<Self>
+	^self
+!
+
+endEntry ^<Self>
+	^self
+! !
+
+! (Delta mirrorFor: #TranscriptStream) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'a TranscriptStream'
+! !
+
+Smalltalk at: #Transcript put: TranscriptStream new !
+
+Delta define: #Compiler as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Compiler) group: 'environment' !
+
+! (Delta mirrorFor: #Compiler) classSide methodsFor: 'evaluating' !
+
+evaluate: source <String> ^<Object>
+	^{{primitiveEvaluate: source ifFail: [:err <Symbol> | self error: 'evaluate: needs a string']}}
+! !
+
+Delta define: #Time as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Time) group: 'environment' !
+(Delta mirrorFor: #Time) comment: 'Clocks for timing code: Time millisecondsToRun: [100 factorial].' !
+
+! (Delta mirrorFor: #Time) classSide methodsFor: 'timing' !
+
+millisecondClockValue ^<Int>
+	^{{primitiveMillisecondClock}}
+!
+
+millisecondsToRun: aBlock <[^Object]> ^<Int>
+	| t0 <Float> |
+	t0 := {{primitiveMillisecondClockFloat}}.
+	aBlock value.
+	^({{primitiveMillisecondClockFloat}} - t0) rounded
+! !
+
+Delta define: #Random as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Random) group: 'environment' !
+(Delta mirrorFor: #Random) comment: 'Pseudo-random numbers: Random new next (a Float from 0 to 1), Random new nextInt: 6 (1 to 6).' !
+
+! (Delta mirrorFor: #Random) classSide methodsFor: 'instance creation' !
+
+seed: n <Int> ^<Instance>
+	{{primitiveRandomSeed: n}}.
+	^self new
+! !
+
+! (Delta mirrorFor: #Random) methodsFor: 'accessing' !
+
+next ^<Float>
+	^{{primitiveRandomNext}}
+!
+
+nextInt: n <Int> ^<Int>
+	^(self next * n) truncated + 1
+!
+
+between: low <Int> and: high <Int> ^<Int>
+	^low + (self next * (high - low + 1)) truncated
+! !
+
+Delta define: #Point as: (
+(Class subclassOf: 'Object' instanceVariables: 'x <Number> y <Number>')) !
+(Delta mirrorFor: #Point) group: 'graphics' !
+(Delta mirrorFor: #Point) comment: 'Two-dimensional points, made with 3 @ 4.' !
+
+! (Delta mirrorFor: #Point) classSide methodsFor: 'instance creation' !
+
+x: xValue <Number> y: yValue <Number> ^<Instance>
+	^self new setX: xValue y: yValue
+! !
+
+! (Delta mirrorFor: #Point) methodsFor: 'accessing' !
+
+x ^<Number>
+	^x
+!
+
+y ^<Number>
+	^y
+!
+
+setX: xValue <Number> y: yValue <Number> ^<Self>
+	x := xValue.
+	y := yValue
+! !
+
+! (Delta mirrorFor: #Point) methodsFor: 'arithmetic' !
+
++ other <Object> ^<Point>
+	other isPoint ifTrue: [^(x + other x) @ (y + other y)].
+	^(x + guaranteed <Number> other) @ (y + guaranteed <Number> other)
+!
+
+- other <Object> ^<Point>
+	other isPoint ifTrue: [^(x - other x) @ (y - other y)].
+	^(x - guaranteed <Number> other) @ (y - guaranteed <Number> other)
+!
+
+* other <Object> ^<Point>
+	other isPoint ifTrue: [^(x * other x) @ (y * other y)].
+	^(x * guaranteed <Number> other) @ (y * guaranteed <Number> other)
+!
+
+/ other <Object> ^<Point>
+	other isPoint ifTrue: [^(x / other x) @ (y / other y)].
+	^(x / guaranteed <Number> other) @ (y / guaranteed <Number> other)
+!
+
+negated ^<Point>
+	^x negated @ y negated
+!
+
+dist: other <Point> ^<Float>
+	^((x - other x) squared + (y - other y) squared) sqrt
+!
+
+r ^<Float>
+	^(x * x + (y * y)) sqrt
+!
+
+transpose ^<Point>
+	^y @ x
+!
+
+rounded ^<Point>
+	^x rounded @ y rounded
+! !
+
+! (Delta mirrorFor: #Point) methodsFor: 'comparing' !
+
+= other <Object> ^<Boolean>
+	^other isPoint and: [x = other x and: [y = other y]]
+!
+
+hash ^<Int>
+	^(x hash bitXor: (y hash * 31)) bitAnd: 16r3FFFFFF
+!
+
+< other <Point> ^<Boolean>
+	^x < other x and: [y < other y]
+!
+
+> other <Point> ^<Boolean>
+	^x > other x and: [y > other y]
+! !
+
+! (Delta mirrorFor: #Point) methodsFor: 'testing' !
+
+isPoint ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Point) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream print: x; nextPut: $@; print: y
+! !
+
+Delta define: #Canvas as: (
+(Class subclassOf: 'Object' instanceVariables: 'id <Int> width <Int> height <Int>')) !
+(Delta mirrorFor: #Canvas) group: 'graphics' !
+(Delta mirrorFor: #Canvas) comment: 'A picture in its own window. Colours are integers 16rRRGGBB. Draw, then send show.' !
+
+! (Delta mirrorFor: #Canvas) classSide methodsFor: 'instance creation' !
+
+width: w <Int> height: h <Int> ^<Instance>
+	^self width: w height: h title: 'Canvas'
+!
+
+width: w <Int> height: h <Int> title: t <Str> ^<Instance>
+	^self basicNew
+		setId: {{primitiveCanvasOpenWidth: w height: h title: t ifFail: [:err <Symbol> | self error: 'cannot open a canvas']}}
+		width: w
+		height: h
+! !
+
+! (Delta mirrorFor: #Canvas) classSide methodsFor: 'colours' !
+
+red: r <Int> green: g <Int> blue: b <Int> ^<Int>
+	^((r max: 0) min: 255) * 65536 + (((g max: 0) min: 255) * 256) + ((b max: 0) min: 255)
+!
+
+black ^<Int>
+	^0
+!
+
+white ^<Int>
+	^16rFFFFFF
+!
+
+red ^<Int>
+	^16rE03030
+!
+
+green ^<Int>
+	^16r30A040
+!
+
+blue ^<Int>
+	^16r3050D0
+! !
+
+! (Delta mirrorFor: #Canvas) methodsFor: 'accessing' !
+
+setId: n <Int> width: w <Int> height: h <Int> ^<Self>
+	id := n.
+	width := w.
+	height := h
+!
+
+width ^<Int>
+	^width
+!
+
+height ^<Int>
+	^height
+! !
+
+! (Delta mirrorFor: #Canvas) methodsFor: 'drawing' !
+
+at: aPoint <Point> put: rgb <Int> ^<Int>
+	self setX: aPoint x truncated y: aPoint y truncated rgb: rgb.
+	^rgb
+!
+
+setX: px <Int> y: py <Int> rgb: rgb <Int> ^<Self>
+	{{primitiveCanvas: id setX: px y: py rgb: rgb ifFail: [:err <Symbol> | self error: 'bad pixel']}}
+!
+
+fillX: px <Int> y: py <Int> width: w <Int> height: h <Int> rgb: rgb <Int> ^<Self>
+	{{primitiveCanvas: id fillX: px y: py width: w height: h rgb: rgb ifFail: [:err <Symbol> | self error: 'bad rectangle']}}
+!
+
+lineFrom: p1 <Point> to: p2 <Point> rgb: rgb <Int> ^<Self>
+	{{primitiveCanvas: id lineX1: p1 x rounded y1: p1 y rounded x2: p2 x rounded y2: p2 y rounded rgb: rgb ifFail: [:err <Symbol> | self error: 'bad line']}}
+!
+
+clear: rgb <Int> ^<Self>
+	self fillX: 0 y: 0 width: width height: height rgb: rgb
+!
+
+show ^<Self>
+	{{primitiveCanvasShow: id ifFail: [:err <Symbol> | nil]}}
+! !
+
+Delta define: #Pen as: (
+(Class subclassOf: 'Object' instanceVariables: 'canvas <Canvas> location <Point> direction <Number> color <Int> down <Boolean>')) !
+(Delta mirrorFor: #Pen) group: 'graphics' !
+(Delta mirrorFor: #Pen) comment: 'Turtle graphics on a Canvas: go: distance, turn: degrees, up, down, color:.' !
+
+! (Delta mirrorFor: #Pen) classSide methodsFor: 'instance creation' !
+
+on: aCanvas <Canvas> ^<Instance>
+	^self new setCanvas: aCanvas
+!
+
+new: size <Int> ^<Instance>
+	^self on: (Canvas width: size height: size title: 'Pen')
+! !
+
+! (Delta mirrorFor: #Pen) methodsFor: 'drawing' !
+
+setCanvas: aCanvas <Canvas> ^<Self>
+	canvas := aCanvas.
+	color := 0.
+	down := true.
+	self home
+!
+
+home ^<Self>
+	location := (canvas width / 2) @ (canvas height / 2).
+	direction := 270
+!
+
+go: distance <Number> ^<Self>
+	| rad <Float> next <Point> |
+	rad := direction degreesToRadians.
+	next := (location x + (distance * rad cos)) @ (location y + (distance * rad sin)).
+	down ifTrue: [canvas lineFrom: location to: next rgb: color].
+	location := next
+!
+
+turn: degrees <Number> ^<Self>
+	direction := direction + degrees \\ 360
+!
+
+up ^<Self>
+	down := false
+!
+
+down ^<Self>
+	down := true
+!
+
+color: rgb <Int> ^<Self>
+	color := rgb
+!
+
+canvas ^<Canvas>
+	^canvas
+!
+
+show ^<Self>
+	canvas show
+! !

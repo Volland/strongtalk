@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How this edition was made — Strongtalk in Rust and WebAssembly</title>
+  <meta name="description" content="How the Strongtalk virtual machine was studied and re-implemented in Rust, and how it runs in the browser through WebAssembly.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="../"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a href="history.html">History</a>
+        <a href="types.html">Types</a>
+        <a href="vm.html">The VM</a>
+        <a class="on" href="this-edition.html">This edition</a>
+        <a href="https://github.com/Volland/strongtalk">GitHub</a>
+        <a class="cta" href="../try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="article">
+    <span class="kicker">This edition</span>
+    <h1>Strongtalk, re-built in Rust</h1>
+    <p class="dek">The environment on this site is a new implementation of the Strongtalk virtual machine, written
+      in Rust, compiled to WebAssembly and run inside your browser.</p>
+
+    <h2>Starting from the original program</h2>
+    <p>The starting point was <code>strongtalk-r200.exe</code>, a 32-bit Windows build of the original VM. Reading its
+      machine code gave the rules this edition follows:</p>
+    <table class="t">
+      <tr><th>What</th><th>The original's rule</th></tr>
+      <tr><td>SmallIntegers</td><td>30-bit values with a 2-bit tag, so <code>SmallInteger maxVal</code> is 536870911</td></tr>
+      <tr><td>Float printing</td><td><code>%1.6f</code>, then trailing zeros dropped, keeping one digit after the point (<code>Float pi</code> → <code>3.141593</code>)</td></tr>
+      <tr><td>Failure codes</td><td>the VM's own list of 136 symbols (<code>#OutOfBounds</code>, <code>#SmallIntegerOverflow</code>, …)</td></tr>
+      <tr><td>Bit shifts</td><td>left shifts that leave 30 bits fail with <code>#SmallIntegerOverflow</code>; right shifts stop at 29 places</td></tr>
+      <tr><td>Not understood</td><td>a <code>Message</code> holding receiver, selector and arguments is sent with <code>doesNotUnderstand:</code></td></tr>
+      <tr><td>Mandelbrot primitive</td><td>z starts at c, at most n − 1 steps, escape when x² + y² &gt; 4</td></tr>
+      <tr><td>Inlined messages</td><td><code>ifTrue:</code>, <code>ifFalse:</code>, <code>and:</code>, <code>or:</code>, <code>whileTrue:</code>, <code>to:by:do:</code> and friends</td></tr>
+    </table>
+    <p>The exe contains only the VM. The class library and windows live in a separate image file that is not part
+      of it, so those were written anew for this edition, in typed Strongtalk source in the original's file-in
+      format (<code>Delta define: #Point as: (...)</code>).</p>
+
+    <h2>How it works</h2>
+    <ul>
+      <li><b>Parser</b> for Strongtalk's syntax: Smalltalk-80 plus <code>&lt;Type&gt;</code> annotations,
+        <code>{{primitive...}}</code> calls and <code>guaranteed</code>.</li>
+      <li><b>Compiler</b> to stack bytecode, inlining the original's control messages.</li>
+      <li><b>Bytecode interpreter</b> that keeps Smalltalk activations on the heap, so recursion can go hundreds of
+        thousands of calls deep even in a browser.</li>
+      <li><b>Class library</b> of about 70 classes: numbers (SmallInteger, LargeInteger, Float, Fraction), collections,
+        strings, streams, ANSI exceptions, points, canvases and turtle graphics.</li>
+      <li><b>Type checker</b> for the annotations.</li>
+      <li><b>Environment</b>: Launcher with Transcript, workspaces, class hierarchy, outliner class browsers,
+        inspectors, error windows and picture windows. The VM runs in a Web Worker, so an endless loop never
+        freezes the page and the Stop button can always interrupt it.</li>
+    </ul>
+
+    <h2>Your work is kept</h2>
+    <p>Classes and methods you define in the environment are saved in your browser and come back when you return.
+      <b>File › Download my changes</b> saves them as a <code>.dlt</code> file you can file in again later.</p>
+
+    <h2>Differences from the original</h2>
+    <ul>
+      <li>No machine-code compiler: everything runs in the bytecode interpreter.</li>
+      <li>No processes (<code>fork</code> runs a block straight away).</li>
+      <li>A simpler type checker (class-based subtyping).</li>
+      <li>A new class library and new windows, in the spirit of the original rather than copies of it.</li>
+    </ul>
+
+    <p><a class="btn primary" href="../try/">Open the environment</a></p>
+
+    <div class="next"><a href="vm.html">← The virtual machine</a><a href="../">Home →</a></div>
+  </article>
+
+  <footer class="foot"><div class="in"><span>Strongtalk — an independent Rust/WebAssembly edition.</span><span class="links"><a href="../try/">Try it</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span></div></footer>
+</body>
+</html>

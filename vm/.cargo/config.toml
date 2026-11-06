@@ -1,0 +1,3 @@
+[target.wasm32-unknown-unknown]
+# The interpreter walks syntax trees recursively; give deep Smalltalk call chains room.
+rustflags = ["-C", "link-arg=-zstack-size=33554432"]

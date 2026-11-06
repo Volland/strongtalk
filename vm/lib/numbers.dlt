@@ -1,0 +1,1157 @@
+"Magnitudes and numbers: SmallInteger, LargeInteger, Float, Fraction and Character."
+
+Delta define: #Magnitude as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Magnitude) group: 'numbers' !
+(Delta mirrorFor: #Magnitude) comment: 'Things that can be compared and ordered.' !
+
+! (Delta mirrorFor: #Magnitude) methodsFor: 'comparing' !
+
+< other <Magnitude> ^<Boolean>
+	^self subclassResponsibility
+!
+
+> other <Magnitude> ^<Boolean>
+	^other < self
+!
+
+<= other <Magnitude> ^<Boolean>
+	^(other < self) not
+!
+
+>= other <Magnitude> ^<Boolean>
+	^(self < other) not
+!
+
+between: min <Magnitude> and: max <Magnitude> ^<Boolean>
+	^self >= min and: [self <= max]
+!
+
+max: other <Magnitude> ^<Self>
+	^self > other ifTrue: [self] ifFalse: [other]
+!
+
+min: other <Magnitude> ^<Self>
+	^self < other ifTrue: [self] ifFalse: [other]
+! !
+
+Delta define: #Number as: (
+(Class subclassOf: 'Magnitude' instanceVariables: '')) !
+(Delta mirrorFor: #Number) group: 'numbers' !
+(Delta mirrorFor: #Number) comment: 'Abstract numbers. Mixed arithmetic converts the less general operand (Integer < Fraction < Float).' !
+
+! (Delta mirrorFor: #Number) methodsFor: 'arithmetic' !
+
++ other <Number> ^<Number>
+	^self subclassResponsibility
+!
+
+- other <Number> ^<Number>
+	^self subclassResponsibility
+!
+
+* other <Number> ^<Number>
+	^self subclassResponsibility
+!
+
+/ other <Number> ^<Number>
+	^self subclassResponsibility
+!
+
+abs ^<Number>
+	^self < 0 ifTrue: [self negated] ifFalse: [self]
+!
+
+negated ^<Number>
+	^0 - self
+!
+
+reciprocal ^<Number>
+	^1 / self
+!
+
+squared ^<Number>
+	^self * self
+!
+
+raisedTo: n <Number> ^<Number>
+	| result <Number> base <Number> e <Int> |
+	n isInteger ifFalse: [^(self asFloat ln * n asFloat) exp].
+	n < 0 ifTrue: [^(self raisedTo: n negated) reciprocal].
+	result := 1.
+	base := self.
+	e := guaranteed <Int> n.
+	[e > 0] whileTrue: [
+		e odd ifTrue: [result := result * base].
+		base := base * base.
+		e := e // 2].
+	^result
+!
+
+** n <Number> ^<Number>
+	^self raisedTo: n
+!
+
+// other <Number> ^<Int>
+	^(self / other) floor
+!
+
+\\ other <Number> ^<Number>
+	^self - (self // other * other)
+!
+
+quo: other <Number> ^<Int>
+	^(self / other) truncated
+!
+
+rem: other <Number> ^<Number>
+	^self - ((self quo: other) * other)
+!
+
+roundTo: quantum <Number> ^<Number>
+	^(self / quantum) rounded * quantum
+!
+
+truncateTo: quantum <Number> ^<Number>
+	^(self quo: quantum) * quantum
+! !
+
+! (Delta mirrorFor: #Number) methodsFor: 'mathematical functions' !
+
+sqrt ^<Float>
+	^self asFloat sqrt
+!
+
+exp ^<Float>
+	^self asFloat exp
+!
+
+ln ^<Float>
+	^self asFloat ln
+!
+
+log ^<Float>
+	^self asFloat log
+!
+
+log: base <Number> ^<Float>
+	^self ln / base ln
+!
+
+sin ^<Float>
+	^self asFloat sin
+!
+
+cos ^<Float>
+	^self asFloat cos
+!
+
+tan ^<Float>
+	^self asFloat tan
+!
+
+arcTan ^<Float>
+	^self asFloat arcTan
+!
+
+arcSin ^<Float>
+	^self asFloat arcSin
+!
+
+arcCos ^<Float>
+	^self asFloat arcCos
+!
+
+degreesToRadians ^<Float>
+	^self asFloat * Float pi / 180.0
+!
+
+radiansToDegrees ^<Float>
+	^self asFloat * 180.0 / Float pi
+! !
+
+! (Delta mirrorFor: #Number) methodsFor: 'testing' !
+
+isNumber ^<Boolean>
+	^true
+!
+
+isZero ^<Boolean>
+	^self = 0
+!
+
+negative ^<Boolean>
+	^self < 0
+!
+
+positive ^<Boolean>
+	^self >= 0
+!
+
+strictlyPositive ^<Boolean>
+	^self > 0
+!
+
+sign ^<Int>
+	self > 0 ifTrue: [^1].
+	self < 0 ifTrue: [^-1].
+	^0
+!
+
+even ^<Boolean>
+	^(self \\ 2) = 0
+!
+
+odd ^<Boolean>
+	^self even not
+! !
+
+! (Delta mirrorFor: #Number) methodsFor: 'converting' !
+
+asFloat ^<Float>
+	^self subclassResponsibility
+!
+
+numerator ^<Int>
+	^self subclassResponsibility
+!
+
+denominator ^<Int>
+	^self subclassResponsibility
+!
+
+truncated ^<Int>
+	^self subclassResponsibility
+!
+
+rounded ^<Int>
+	^(self + (1/2)) floor
+!
+
+floor ^<Int>
+	| t <Int> |
+	t := self truncated.
+	^(self < 0 and: [self ~= t]) ifTrue: [t - 1] ifFalse: [t]
+!
+
+ceiling ^<Int>
+	| t <Int> |
+	t := self truncated.
+	^(self > 0 and: [self ~= t]) ifTrue: [t + 1] ifFalse: [t]
+!
+
+asInteger ^<Int>
+	^self truncated
+!
+
+@ y <Number> ^<Point>
+	^Point x: self y: y
+!
+
+to: stop <Number> ^<Interval>
+	^Interval from: self to: stop by: 1
+!
+
+to: stop <Number> by: step <Number> ^<Interval>
+	^Interval from: self to: stop by: step
+!
+
+generality ^<Int>
+	^self subclassResponsibility
+!
+
+coerce: n <Number> ^<Number>
+	^self subclassResponsibility
+!
+
+retry: selector <Symbol> coercing: other <Object> ^<Object>
+	"Mixed arithmetic: convert the less general operand, then try again."
+	| g1 <Int> g2 <Int> |
+	other isNumber ifFalse: [
+		selector == #= ifTrue: [^false].
+		selector == #~= ifTrue: [^true].
+		^self error: other printString, ' is not a number'].
+	g1 := self generality.
+	g2 := other generality.
+	g1 = g2 ifTrue: [^self error: 'cannot perform ', selector, ' on ', self printString, ' and ', other printString].
+	g1 > g2 ifTrue: [^self perform: selector with: (self coerce: guaranteed <Number> other)].
+	^(other coerce: self) perform: selector with: other
+! !
+
+! (Delta mirrorFor: #Number) methodsFor: 'iterating' !
+
+to: stop <Number> do: aBlock <[Number, ^Object]> ^<Self>
+	| i <Number> |
+	i := self.
+	[i <= stop] whileTrue: [aBlock value: i. i := i + 1]
+!
+
+to: stop <Number> by: step <Number> do: aBlock <[Number, ^Object]> ^<Self>
+	| i <Number> |
+	i := self.
+	step > 0
+		ifTrue: [[i <= stop] whileTrue: [aBlock value: i. i := i + step]]
+		ifFalse: [[i >= stop] whileTrue: [aBlock value: i. i := i + step]]
+!
+
+to: stop <Number> collect: aBlock <[Number, ^Object]> ^<Array>
+	^(self to: stop) collect: aBlock
+! !
+
+! (Delta mirrorFor: #Number) methodsFor: 'printing' !
+
+printString: base <Int> ^<String>
+	^self printString
+!
+
+printOn: aStream <WriteStream> base: b <Int>
+	aStream nextPutAll: (self printString: b)
+!
+
+displayString ^<String>
+	^self printString
+! !
+
+Delta define: #Integer as: (
+(Class subclassOf: 'Number' instanceVariables: '')) !
+(Delta mirrorFor: #Integer) group: 'numbers' !
+(Delta mirrorFor: #Integer) comment: 'Whole numbers of any size. Results that do not fit in a SmallInteger become LargeIntegers automatically.' !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'arithmetic' !
+
++ other <Number> ^<Number>
+	^{{self primitiveAdd: other ifFail: [:err <Symbol> | self retry: #+ coercing: other]}}
+!
+
+- other <Number> ^<Number>
+	^{{self primitiveSubtract: other ifFail: [:err <Symbol> | self retry: #- coercing: other]}}
+!
+
+* other <Number> ^<Number>
+	^{{self primitiveMultiply: other ifFail: [:err <Symbol> | self retry: #* coercing: other]}}
+!
+
+/ other <Number> ^<Number>
+	other isInteger ifTrue: [
+		other = 0 ifTrue: [^self zeroDivide].
+		^(Fraction numerator: self denominator: guaranteed <Int> other) reduced].
+	^self retry: #/ coercing: other
+!
+
+// other <Number> ^<Int>
+	^{{self primitiveDiv: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero ifTrue: [self zeroDivide] ifFalse: [self retry: #// coercing: other]]}}
+!
+
+\\ other <Number> ^<Number>
+	^{{self primitiveMod: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero ifTrue: [self zeroDivide] ifFalse: [self retry: #\\ coercing: other]]}}
+!
+
+quo: other <Number> ^<Int>
+	^{{self primitiveQuo: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero ifTrue: [self zeroDivide] ifFalse: [(self / other) truncated]]}}
+!
+
+rem: other <Number> ^<Number>
+	^{{self primitiveRemainder: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero ifTrue: [self zeroDivide] ifFalse: [self - ((self quo: other) * other)]]}}
+!
+
+negated ^<Int>
+	^0 - self
+!
+
+abs ^<Int>
+	^self < 0 ifTrue: [0 - self] ifFalse: [self]
+!
+
+zeroDivide ^<Object>
+	^ZeroDivide new dividend: self; signal: 'division by zero'
+!
+
+gcd: other <Int> ^<Int>
+	^{{self primitiveGcd: other ifFail: [:err <Symbol> | self error: 'gcd: needs an integer']}}
+!
+
+lcm: other <Int> ^<Int>
+	^(self * other) abs // (self gcd: other)
+!
+
+raisedTo: n <Number> ^<Number>
+	(n isInteger and: [n >= 0]) ifTrue: [
+		^{{self primitiveIntegerRaisedTo: n ifFail: [:err <Symbol> | super raisedTo: n]}}].
+	^super raisedTo: n
+!
+
+factorial ^<Int>
+	| r <Int> |
+	self < 0 ifTrue: [^self error: 'factorial of a negative number'].
+	r := 1.
+	2 to: self do: [:i <Int> | r := r * i].
+	^r
+!
+
+sqrtFloor ^<Int>
+	^{{self primitiveIntegerSqrtFloorIfFail: [:err <Symbol> | self error: 'square root of a negative number']}}
+! !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'comparing' !
+
+< other <Number> ^<Boolean>
+	^{{self primitiveLessThan: other ifFail: [:err <Symbol> | self retry: #< coercing: other]}}
+!
+
+> other <Number> ^<Boolean>
+	^{{self primitiveGreaterThan: other ifFail: [:err <Symbol> | self retry: #> coercing: other]}}
+!
+
+<= other <Number> ^<Boolean>
+	^{{self primitiveLessThanOrEqual: other ifFail: [:err <Symbol> | self retry: #<= coercing: other]}}
+!
+
+>= other <Number> ^<Boolean>
+	^{{self primitiveGreaterThanOrEqual: other ifFail: [:err <Symbol> | self retry: #>= coercing: other]}}
+!
+
+= other <Object> ^<Boolean>
+	^{{self primitiveSmallIntegerEqual: other ifFail: [:err <Symbol> | self retry: #= coercing: other]}}
+!
+
+~= other <Object> ^<Boolean>
+	^{{self primitiveSmallIntegerNotEqual: other ifFail: [:err <Symbol> | self retry: #~= coercing: other]}}
+!
+
+hash ^<Int>
+	^self
+! !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'bit manipulation' !
+
+bitAnd: n <Int> ^<Int>
+	^{{self primitiveBitAnd: n ifFail: [:err <Symbol> | self error: 'bitAnd: needs an integer']}}
+!
+
+bitOr: n <Int> ^<Int>
+	^{{self primitiveBitOr: n ifFail: [:err <Symbol> | self error: 'bitOr: needs an integer']}}
+!
+
+bitXor: n <Int> ^<Int>
+	^{{self primitiveBitXor: n ifFail: [:err <Symbol> | self error: 'bitXor: needs an integer']}}
+!
+
+bitShift: n <Int> ^<Int>
+	"The primitive fails with #SmallIntegerOverflow when the result is too big for a
+	SmallInteger (VM code 0x4c3170); the shift is then done with LargeIntegers."
+	^{{self primitiveBitShift: n ifFail: [:err <Symbol> |
+		err == #SmallIntegerOverflow
+			ifTrue: [n >= 0 ifTrue: [self * (2 raisedTo: n)] ifFalse: [self // (2 raisedTo: n negated)]]
+			ifFalse: [self error: 'bitShift: needs an integer']]}}
+!
+
+<< n <Int> ^<Int>
+	^self bitShift: n
+!
+
+>> n <Int> ^<Int>
+	^self bitShift: 0 - n
+!
+
+bitAt: i <Int> ^<Int>
+	^(self bitShift: 1 - i) bitAnd: 1
+!
+
+isPowerOfTwo ^<Boolean>
+	^self > 0 and: [(self bitAnd: self - 1) = 0]
+! !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'testing' !
+
+isInteger ^<Boolean>
+	^true
+!
+
+even ^<Boolean>
+	^(self bitAnd: 1) = 0
+!
+
+odd ^<Boolean>
+	^(self bitAnd: 1) = 1
+!
+
+isPrime ^<Boolean>
+	^{{self primitiveIntegerIsPrimeIfFail: [:err <Symbol> | self error: 'isPrime needs a small integer']}}
+! !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'converting' !
+
+asFloat ^<Float>
+	^{{self primitiveAsFloatIfFail: [:err <Symbol> | 0.0]}}
+!
+
+asInteger ^<Int>
+	^self
+!
+
+asCharacter ^<Character>
+	^Character value: self
+!
+
+truncated ^<Int>
+	^self
+!
+
+rounded ^<Int>
+	^self
+!
+
+floor ^<Int>
+	^self
+!
+
+ceiling ^<Int>
+	^self
+!
+
+numerator ^<Int>
+	^self
+!
+
+denominator ^<Int>
+	^1
+!
+
+generality ^<Int>
+	^10
+!
+
+coerce: n <Number> ^<Number>
+	^n truncated
+! !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'iterating' !
+
+timesRepeat: aBlock <[^Object]> ^<Self>
+	| i <Int> |
+	i := 1.
+	[i <= self] whileTrue: [aBlock value. i := i + 1]
+!
+
+atRandom ^<Int>
+	^(Random new next * self) truncated + 1
+! !
+
+! (Delta mirrorFor: #Integer) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: (self printString: 10)
+!
+
+printString: base <Int> ^<String>
+	^{{self primitiveIntegerPrintBase: base ifFail: [:err <Symbol> | self error: 'bad base']}}
+!
+
+printStringRadix: base <Int> ^<String>
+	^base printString, 'r', (self printString: base)
+!
+
+radix: base <Int> ^<String>
+	^self printString: base
+!
+
+printPaddedWith: c <Character> to: width <Int> ^<String>
+	| s <String> |
+	s := self printString.
+	[s size < width] whileTrue: [s := (String with: c), s].
+	^s
+!
+
+asWords ^<String>
+	"The number written out in English words, for numbers below a million."
+	| ones <Array> tens <Array> n <Int> |
+	ones := #('zero' 'one' 'two' 'three' 'four' 'five' 'six' 'seven' 'eight' 'nine' 'ten' 'eleven' 'twelve' 'thirteen' 'fourteen' 'fifteen' 'sixteen' 'seventeen' 'eighteen' 'nineteen').
+	tens := #('' 'twenty' 'thirty' 'forty' 'fifty' 'sixty' 'seventy' 'eighty' 'ninety').
+	n := self.
+	n < 0 ifTrue: [^'minus ', n negated asWords].
+	n < 20 ifTrue: [^ones at: n + 1].
+	n < 100 ifTrue: [^(tens at: n // 10), ((n \\ 10) = 0 ifTrue: [''] ifFalse: ['-', (ones at: n \\ 10 + 1)])].
+	n < 1000 ifTrue: [^(ones at: n // 100 + 1), ' hundred', ((n \\ 100) = 0 ifTrue: [''] ifFalse: [' and ', (n \\ 100) asWords])].
+	n < 1000000 ifTrue: [^(n // 1000) asWords, ' thousand', ((n \\ 1000) = 0 ifTrue: [''] ifFalse: [' ', (n \\ 1000) asWords])].
+	^self printString
+! !
+
+Delta define: #SmallInteger as: (
+(Class subclassOf: 'Integer' instanceVariables: '')) !
+(Delta mirrorFor: #SmallInteger) group: 'numbers' !
+(Delta mirrorFor: #SmallInteger) comment: 'Integers that fit in 31 bits, as in the original 32-bit virtual machine. They are values, not objects in the heap.' !
+
+! (Delta mirrorFor: #SmallInteger) classSide methodsFor: 'constants' !
+
+maxVal ^<SmallInteger>
+	^{{primitiveSmallIntegerMaxValue}}
+!
+
+minVal ^<SmallInteger>
+	^{{primitiveSmallIntegerMinValue}}
+! !
+
+! (Delta mirrorFor: #SmallInteger) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !
+
+Delta define: #LargeInteger as: (
+(Class subclassOf: 'Integer' instanceVariables: '')) !
+(Delta mirrorFor: #LargeInteger) group: 'numbers' !
+(Delta mirrorFor: #LargeInteger) comment: 'Integers too big for a SmallInteger, with as many digits as needed.' !
+
+! (Delta mirrorFor: #LargeInteger) methodsFor: 'converting' !
+
+generality ^<Int>
+	^20
+! !
+
+Delta define: #Float as: (
+(Class subclassOf: 'Number' instanceVariables: '')) !
+(Delta mirrorFor: #Float) group: 'numbers' !
+(Delta mirrorFor: #Float) comment: 'Double-precision (64-bit) floating point numbers.' !
+
+! (Delta mirrorFor: #Float) classSide methodsFor: 'constants' !
+
+pi ^<Float>
+	^{{primitiveFloatPiIfFail: [:err <Symbol> | 3.141592653589793]}}
+!
+
+e ^<Float>
+	^{{primitiveFloatEIfFail: [:err <Symbol> | 2.718281828459045]}}
+!
+
+infinity ^<Float>
+	^{{primitiveFloatInfinityIfFail: [:err <Symbol> | 0.0]}}
+!
+
+nan ^<Float>
+	^{{primitiveFloatNaNIfFail: [:err <Symbol> | 0.0]}}
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'arithmetic' !
+
++ other <Number> ^<Float>
+	^{{self primitiveFloatAdd: other ifFail: [:err <Symbol> | self retry: #+ coercing: other]}}
+!
+
+- other <Number> ^<Float>
+	^{{self primitiveFloatSubtract: other ifFail: [:err <Symbol> | self retry: #- coercing: other]}}
+!
+
+* other <Number> ^<Float>
+	^{{self primitiveFloatMultiply: other ifFail: [:err <Symbol> | self retry: #* coercing: other]}}
+!
+
+/ other <Number> ^<Float>
+	^{{self primitiveFloatDivide: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero
+			ifTrue: [ZeroDivide new dividend: self; signal: 'division by zero']
+			ifFalse: [self retry: #/ coercing: other]]}}
+!
+
+// other <Number> ^<Int>
+	^{{self primitiveDiv: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero
+			ifTrue: [ZeroDivide new dividend: self; signal: 'division by zero']
+			ifFalse: [self retry: #// coercing: other]]}}
+!
+
+\\ other <Number> ^<Float>
+	^{{self primitiveFloatMod: other ifFail: [:err <Symbol> |
+		err == #DivisionByZero
+			ifTrue: [ZeroDivide new dividend: self; signal: 'division by zero']
+			ifFalse: [self retry: #\\ coercing: other]]}}
+!
+
+quo: other <Number> ^<Int>
+	^(self / other) truncated
+!
+
+rem: other <Number> ^<Float>
+	^self - ((self quo: other) * other)
+!
+
+negated ^<Float>
+	^0.0 - self
+!
+
+abs ^<Float>
+	^self < 0.0 ifTrue: [0.0 - self] ifFalse: [self]
+!
+
+raisedTo: n <Number> ^<Float>
+	^{{self primitiveFloatRaisedTo: n ifFail: [:err <Symbol> | self error: 'raisedTo: needs a number']}}
+!
+
+timesTwoPower: n <Int> ^<Float>
+	^{{self primitiveFloatTimesTwoPower: n ifFail: [:err <Symbol> | self error: 'timesTwoPower: needs an integer']}}
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'comparing' !
+
+< other <Number> ^<Boolean>
+	^{{self primitiveFloatLessThan: other ifFail: [:err <Symbol> | self retry: #< coercing: other]}}
+!
+
+> other <Number> ^<Boolean>
+	^{{self primitiveFloatGreaterThan: other ifFail: [:err <Symbol> | self retry: #> coercing: other]}}
+!
+
+<= other <Number> ^<Boolean>
+	^{{self primitiveFloatLessThanOrEqual: other ifFail: [:err <Symbol> | self retry: #<= coercing: other]}}
+!
+
+>= other <Number> ^<Boolean>
+	^{{self primitiveFloatGreaterThanOrEqual: other ifFail: [:err <Symbol> | self retry: #>= coercing: other]}}
+!
+
+= other <Object> ^<Boolean>
+	^{{self primitiveFloatEqual: other ifFail: [:err <Symbol> | self retry: #= coercing: other]}}
+!
+
+~= other <Object> ^<Boolean>
+	^{{self primitiveFloatNotEqual: other ifFail: [:err <Symbol> | self retry: #~= coercing: other]}}
+!
+
+hash ^<Int>
+	self fractionPart = 0.0 ifTrue: [^self truncated hash].
+	^{{self primitiveHash}}
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'mathematical functions' !
+
+sqrt ^<Float>
+	^{{self primitiveFloatSqrtIfFail: [:err <Symbol> | 0.0]}}
+!
+
+exp ^<Float>
+	^{{self primitiveFloatExpIfFail: [:err <Symbol> | 0.0]}}
+!
+
+ln ^<Float>
+	^{{self primitiveFloatLnIfFail: [:err <Symbol> | 0.0]}}
+!
+
+log ^<Float>
+	^{{self primitiveFloatLog10IfFail: [:err <Symbol> | 0.0]}}
+!
+
+sin ^<Float>
+	^{{self primitiveFloatSineIfFail: [:err <Symbol> | 0.0]}}
+!
+
+cos ^<Float>
+	^{{self primitiveFloatCosineIfFail: [:err <Symbol> | 0.0]}}
+!
+
+tan ^<Float>
+	^{{self primitiveFloatTangentIfFail: [:err <Symbol> | 0.0]}}
+!
+
+arcTan ^<Float>
+	^{{self primitiveFloatArcTangentIfFail: [:err <Symbol> | 0.0]}}
+!
+
+arcSin ^<Float>
+	^{{self primitiveFloatArcSineIfFail: [:err <Symbol> | 0.0]}}
+!
+
+arcCos ^<Float>
+	^{{self primitiveFloatArcCosineIfFail: [:err <Symbol> | 0.0]}}
+!
+
+sinh ^<Float>
+	^{{self primitiveFloatHyperbolicSineIfFail: [:err <Symbol> | 0.0]}}
+!
+
+cosh ^<Float>
+	^{{self primitiveFloatHyperbolicCosineIfFail: [:err <Symbol> | 0.0]}}
+!
+
+tanh ^<Float>
+	^{{self primitiveFloatHyperbolicTangentIfFail: [:err <Symbol> | 0.0]}}
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'converting' !
+
+asFloat ^<Float>
+	^self
+!
+
+truncated ^<Int>
+	"As the VM does it: cut toward zero as a Float (0x4cc2b0), then convert to a SmallInteger
+	(0x4cc5a0); results too big for a SmallInteger become LargeIntegers."
+	| t <Float> |
+	t := {{self primitiveFloatTruncated}}.
+	^{{t primitiveFloatAsSmallIntegerIfFail: [:err <Symbol> |
+		{{self primitiveFloatTruncatedIfFail: [:err2 <Symbol> | self error: 'cannot truncate ', self printString]}}]}}
+!
+
+floor ^<Int>
+	"primitiveFloatSmallIntegerFloorIfFail: (0x4cbfb0), with a LargeInteger fallback."
+	^{{self primitiveFloatSmallIntegerFloorIfFail: [:err <Symbol> |
+		{{self primitiveFloatFloorIfFail: [:err2 <Symbol> | self error: 'cannot take the floor of ', self printString]}}]}}
+!
+
+ceiling ^<Int>
+	^{{self primitiveFloatCeilingIfFail: [:err <Symbol> | self error: 'cannot take the ceiling of ', self printString]}}
+!
+
+rounded ^<Int>
+	"The VM rounds to a SmallInteger (0x4cc480); too-large results are rounded with LargeIntegers."
+	^{{self primitiveFloatRoundedAsSmallIntegerIfFail: [:err <Symbol> |
+		{{self primitiveFloatRoundedIfFail: [:err2 <Symbol> | self error: 'cannot round ', self printString]}}]}}
+!
+
+fractionPart ^<Float>
+	^{{self primitiveFloatFractionPartIfFail: [:err <Symbol> | 0.0]}}
+!
+
+integerPart ^<Float>
+	^self - self fractionPart
+!
+
+generality ^<Int>
+	^40
+!
+
+coerce: n <Number> ^<Float>
+	^n asFloat
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'testing' !
+
+isFloat ^<Boolean>
+	^true
+!
+
+isNaN ^<Boolean>
+	^{{self primitiveFloatIsNaNIfFail: [:err <Symbol> | false]}}
+!
+
+isInfinite ^<Boolean>
+	^self = Float infinity or: [self = Float infinity negated]
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: {{self primitiveFloatPrintStringIfFail: [:err <Symbol> | 'a Float']}}
+!
+
+printString: digits <Int> ^<String>
+	"The receiver with a fixed number of digits after the point."
+	^{{self primitiveFloatPrintString: digits ifFail: [:err <Symbol> | self printString]}}
+!
+
+roundTo: quantum <Number> ^<Float>
+	^(self / quantum) rounded * quantum asFloat
+! !
+
+! (Delta mirrorFor: #Float) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !
+
+Delta define: #Fraction as: (
+(Class subclassOf: 'Number' instanceVariables: 'numerator <Int> denominator <Int>')) !
+(Delta mirrorFor: #Fraction) group: 'numbers' !
+(Delta mirrorFor: #Fraction) comment: 'Exact rational numbers such as 1/3, always kept in lowest terms with a positive denominator.' !
+
+! (Delta mirrorFor: #Fraction) classSide methodsFor: 'instance creation' !
+
+numerator: n <Int> denominator: d <Int> ^<Instance>
+	^self new setNumerator: n denominator: d
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'private' !
+
+setNumerator: n <Int> denominator: d <Int> ^<Self>
+	d = 0 ifTrue: [^ZeroDivide new dividend: n; signal: 'division by zero'].
+	d < 0
+		ifTrue: [numerator := n negated. denominator := d negated]
+		ifFalse: [numerator := n. denominator := d]
+!
+
+reduced ^<Number>
+	| g <Int> n <Int> d <Int> |
+	numerator = 0 ifTrue: [^0].
+	g := numerator gcd: denominator.
+	n := numerator // g.
+	d := denominator // g.
+	d = 1 ifTrue: [^n].
+	^Fraction numerator: n denominator: d
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'accessing' !
+
+numerator ^<Int>
+	^numerator
+!
+
+denominator ^<Int>
+	^denominator
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'arithmetic' !
+
++ other <Number> ^<Number>
+	(other isInteger or: [other isFraction]) ifFalse: [^self retry: #+ coercing: other].
+	^(Fraction
+		numerator: numerator * other denominator + (other numerator * denominator)
+		denominator: denominator * other denominator) reduced
+!
+
+- other <Number> ^<Number>
+	(other isInteger or: [other isFraction]) ifFalse: [^self retry: #- coercing: other].
+	^(Fraction
+		numerator: numerator * other denominator - (other numerator * denominator)
+		denominator: denominator * other denominator) reduced
+!
+
+* other <Number> ^<Number>
+	(other isInteger or: [other isFraction]) ifFalse: [^self retry: #* coercing: other].
+	^(Fraction
+		numerator: numerator * other numerator
+		denominator: denominator * other denominator) reduced
+!
+
+/ other <Number> ^<Number>
+	(other isInteger or: [other isFraction]) ifFalse: [^self retry: #/ coercing: other].
+	other = 0 ifTrue: [^ZeroDivide new dividend: self; signal: 'division by zero'].
+	^(Fraction
+		numerator: numerator * other denominator
+		denominator: denominator * other numerator) reduced
+!
+
+// other <Number> ^<Int>
+	^(self / other) floor
+!
+
+\\ other <Number> ^<Number>
+	^self - ((self // other) * other)
+!
+
+negated ^<Number>
+	^Fraction numerator: numerator negated denominator: denominator
+!
+
+reciprocal ^<Number>
+	^(Fraction numerator: denominator denominator: numerator) reduced
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'comparing' !
+
+< other <Number> ^<Boolean>
+	(other isInteger or: [other isFraction]) ifFalse: [^self retry: #< coercing: other].
+	^numerator * other denominator < (other numerator * denominator)
+!
+
+= other <Object> ^<Boolean>
+	other isNumber ifFalse: [^false].
+	other isFloat ifTrue: [^self asFloat = other].
+	^numerator = other numerator and: [denominator = other denominator]
+!
+
+hash ^<Int>
+	^numerator hash bitXor: denominator hash
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'converting' !
+
+asFloat ^<Float>
+	^numerator asFloat / denominator asFloat
+!
+
+truncated ^<Int>
+	^numerator quo: denominator
+!
+
+floor ^<Int>
+	^numerator // denominator
+!
+
+ceiling ^<Int>
+	^(numerator + denominator - 1) // denominator
+!
+
+rounded ^<Int>
+	^(self + (1/2)) floor
+!
+
+generality ^<Int>
+	^30
+!
+
+coerce: n <Number> ^<Number>
+	^Fraction numerator: n truncated denominator: 1
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'testing' !
+
+isFraction ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Fraction) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream print: numerator; nextPut: $/; print: denominator
+! !
+
+Delta define: #Character as: (
+(Class subclassOf: 'Magnitude' instanceVariables: '')) !
+(Delta mirrorFor: #Character) group: 'text' !
+(Delta mirrorFor: #Character) comment: 'Characters ($a, $Z, $ ). Like SmallIntegers they are values.' !
+
+! (Delta mirrorFor: #Character) classSide methodsFor: 'instance creation' !
+
+value: code <Int> ^<Character>
+	^{{primitiveCharacterFor: code ifFail: [:err <Symbol> | self error: code printString, ' is not a character code']}}
+!
+
+cr ^<Character>
+	^self value: 13
+!
+
+lf ^<Character>
+	^self value: 10
+!
+
+nl ^<Character>
+	^self value: 10
+!
+
+tab ^<Character>
+	^self value: 9
+!
+
+space ^<Character>
+	^self value: 32
+!
+
+esc ^<Character>
+	^self value: 27
+! !
+
+! (Delta mirrorFor: #Character) methodsFor: 'accessing' !
+
+value ^<Int>
+	^{{self primitiveCharacterValueIfFail: [:err <Symbol> | 0]}}
+!
+
+asInteger ^<Int>
+	^self value
+!
+
+asCharacter ^<Character>
+	^self
+!
+
+digitValue ^<Int>
+	self isDigit ifTrue: [^self value - 48].
+	self isLetter ifTrue: [^self asUppercase value - 55].
+	^-1
+! !
+
+! (Delta mirrorFor: #Character) methodsFor: 'comparing' !
+
+< other <Character> ^<Boolean>
+	^self value < other value
+!
+
+hash ^<Int>
+	^self value
+! !
+
+! (Delta mirrorFor: #Character) methodsFor: 'testing' !
+
+isCharacter ^<Boolean>
+	^true
+!
+
+isVowel ^<Boolean>
+	^{{self primitiveCharacterTest: #vowel ifFail: [:err <Symbol> | false]}}
+!
+
+isLetter ^<Boolean>
+	^{{self primitiveCharacterTest: #letter ifFail: [:err <Symbol> | false]}}
+!
+
+isDigit ^<Boolean>
+	^{{self primitiveCharacterTest: #digit ifFail: [:err <Symbol> | false]}}
+!
+
+isUppercase ^<Boolean>
+	^{{self primitiveCharacterTest: #upper ifFail: [:err <Symbol> | false]}}
+!
+
+isLowercase ^<Boolean>
+	^{{self primitiveCharacterTest: #lower ifFail: [:err <Symbol> | false]}}
+!
+
+isSeparator ^<Boolean>
+	^{{self primitiveCharacterTest: #separator ifFail: [:err <Symbol> | false]}}
+!
+
+isAlphaNumeric ^<Boolean>
+	^{{self primitiveCharacterTest: #alphanumeric ifFail: [:err <Symbol> | false]}}
+! !
+
+! (Delta mirrorFor: #Character) methodsFor: 'converting' !
+
+asUppercase ^<Character>
+	^{{self primitiveCharacterTest: #asUppercase ifFail: [:err <Symbol> | self]}}
+!
+
+asLowercase ^<Character>
+	^{{self primitiveCharacterTest: #asLowercase ifFail: [:err <Symbol> | self]}}
+!
+
+asString ^<String>
+	^{{self primitiveCharacterTest: #asString ifFail: [:err <Symbol> | '?']}}
+!
+
+asSymbol ^<Symbol>
+	^self asString asSymbol
+!
+
+to: other <Character> ^<Array>
+	^(self value to: other value) collect: [:i <Int> | Character value: i]
+! !
+
+! (Delta mirrorFor: #Character) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPut: $$; nextPut: self
+!
+
+displayString ^<String>
+	^self asString
+! !
+
+! (Delta mirrorFor: #Character) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !

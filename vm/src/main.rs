@@ -1,0 +1,196 @@
+//! The `strongtalk` command: an interactive workspace in the terminal, plus file-in and
+//! type checking for scripts.
+//!
+//!   strongtalk                     interactive: type expressions, end with an empty line
+//!   strongtalk file.dlt ...        file in each file (chunk format) and run its do-its
+//!   strongtalk -e '3 + 4'          print the value of one expression
+//!   strongtalk --typecheck [Class] type-check a class (or every class)
+//!   strongtalk --bench             run Benchmark runAll
+
+use serde_json::Value as J;
+use std::io::{self, BufRead, Write};
+use strongtalk::Vm;
+
+fn print_result(vm: &mut Vm, src: &str) -> bool {
+    let out: J = serde_json::from_str(&vm.eval(src, "terminal", true)).unwrap_or(J::Null);
+    if let Some(t) = out["transcript"].as_str() {
+        print!("{}", t);
+    }
+    for ev in out["events"].as_array().cloned().unwrap_or_default() {
+        if ev["type"] == "canvas" {
+            println!("[canvas \"{}\" {}x{} drawn - open the web version to see pictures]", ev["title"].as_str().unwrap_or(""), ev["width"], ev["height"]);
+        } else if ev["type"] == "inspect" {
+            let id = ev["id"].as_u64().unwrap_or(0) as usize;
+            let ins: J = serde_json::from_str(&vm.inspect(id)).unwrap_or(J::Null);
+            println!("Inspector on {} ({})", ins["title"].as_str().unwrap_or(""), ins["class"].as_str().unwrap_or(""));
+            for f in ins["fields"].as_array().cloned().unwrap_or_default() {
+                println!("  {:>12}: {}", f["name"].as_str().unwrap_or(""), f["value"].as_str().unwrap_or(""));
+            }
+        }
+    }
+    if out["ok"] == true {
+        println!("{}", out["value"].as_str().unwrap_or(""));
+        true
+    } else {
+        println!("Error: {}", out["error"].as_str().unwrap_or("?"));
+        for (i, s) in out["stack"].as_array().cloned().unwrap_or_default().iter().enumerate() {
+            if i >= 12 {
+                break;
+            }
+            println!("    {}", s.as_str().unwrap_or(""));
+        }
+        false
+    }
+}
+
+fn print_problems(out: &str) -> usize {
+    let j: J = serde_json::from_str(out).unwrap_or(J::Null);
+    let ps = j["problems"].as_array().cloned().unwrap_or_default();
+    for p in &ps {
+        println!(
+            "{}{}>>{} (line {}): {}",
+            p["class"].as_str().unwrap_or(""),
+            if p["meta"] == true { " class" } else { "" },
+            p["selector"].as_str().unwrap_or(""),
+            p["line"],
+            p["message"].as_str().unwrap_or("")
+        );
+    }
+    ps.len()
+}
+
+fn repl(vm: &mut Vm) {
+    println!("Strongtalk 2.0 - Rust edition. Type an expression; an empty line runs it. Ctrl-D quits.");
+    println!("Try:  3 + 4 * 5     100 factorial     #(3 1 2) asSortedCollection     Benchmark runAll");
+    let stdin = io::stdin();
+    let mut buf = String::new();
+    loop {
+        print!("{}", if buf.is_empty() { "st> " } else { "... " });
+        io::stdout().flush().ok();
+        let mut line = String::new();
+        if stdin.lock().read_line(&mut line).unwrap_or(0) == 0 {
+            if !buf.trim().is_empty() {
+                print_result(vm, &buf);
+            }
+            println!();
+            break;
+        }
+        let complete_line = line.trim_end().ends_with('.') || line.trim().is_empty();
+        buf.push_str(&line);
+        // single-line expressions run right away; longer ones wait for an empty line
+        if line.trim().is_empty() || (!complete_line && buf.lines().count() == 1 && balanced(&buf)) {
+            if !buf.trim().is_empty() {
+                print_result(vm, &buf);
+            }
+            buf.clear();
+        }
+    }
+}
+
+fn balanced(s: &str) -> bool {
+    let mut depth = 0i32;
+    let mut in_str = false;
+    let mut in_comment = false;
+    let mut prev = ' ';
+    for c in s.chars() {
+        if in_str {
+            if c == '\'' {
+                in_str = false;
+            }
+        } else if in_comment {
+            if c == '"' {
+                in_comment = false;
+            }
+        } else if prev == '$' {
+        } else {
+            match c {
+                '\'' => in_str = true,
+                '"' => in_comment = true,
+                '(' | '[' | '{' => depth += 1,
+                ')' | ']' | '}' => depth -= 1,
+                _ => {}
+            }
+        }
+        prev = if prev == '$' && !in_str && !in_comment { ' ' } else { c };
+    }
+    depth <= 0 && !in_str && !in_comment
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let child = std::thread::Builder::new()
+        .stack_size(512 * 1024 * 1024)
+        .spawn(move || run(args))
+        .expect("start interpreter thread");
+    let code = child.join().unwrap_or(1);
+    std::process::exit(code);
+}
+
+fn run(args: Vec<String>) -> i32 {
+    let mut vm = Vm::new();
+    vm.it.max_depth = 1_000_000;
+    vm.it.depth_limit = 1_000_000;
+    vm.it.max_run_depth = 20_000;
+    if !vm.boot_errors.is_empty() {
+        eprintln!("warning: the class library loaded with {} problem(s):", vm.boot_errors.len());
+        for e in vm.boot_errors.iter().take(20) {
+            eprintln!("  {}", e);
+        }
+    }
+    if args.is_empty() {
+        repl(&mut vm);
+        return 0;
+    }
+    let mut i = 0;
+    let mut code = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "-h" | "--help" => {
+                println!("usage: strongtalk [file.dlt ...] [-e expression] [--typecheck [Class]] [--bench] [-i]");
+            }
+            "-e" => {
+                i += 1;
+                if let Some(src) = args.get(i) {
+                    if !print_result(&mut vm, src) {
+                        code = 1;
+                    }
+                }
+            }
+            "--typecheck" => {
+                let target = args.get(i + 1).filter(|a| !a.starts_with('-')).cloned();
+                let out = match &target {
+                    Some(c) => {
+                        i += 1;
+                        vm.typecheck_class(c)
+                    }
+                    None => vm.typecheck_all(),
+                };
+                let n = print_problems(&out);
+                println!("{} type problem(s)", n);
+                if n > 0 {
+                    code = 2;
+                }
+            }
+            "--bench" => {
+                print_result(&mut vm, "Benchmark runAll");
+            }
+            "-i" => repl(&mut vm),
+            path => match std::fs::read_to_string(path) {
+                Ok(text) => {
+                    let out: J = serde_json::from_str(&vm.file_in(&text)).unwrap_or(J::Null);
+                    print!("{}", out["transcript"].as_str().unwrap_or(""));
+                    for e in out["errors"].as_array().cloned().unwrap_or_default() {
+                        eprintln!("{}: {}", path, e.as_str().unwrap_or(""));
+                        code = 1;
+                    }
+                }
+                Err(e) => {
+                    eprintln!("cannot read {}: {}", path, e);
+                    code = 1;
+                }
+            },
+        }
+        i += 1;
+    }
+    code
+}

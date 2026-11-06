@@ -1,0 +1,739 @@
+"Strongtalk kernel classes, in file-in (chunk) format."
+
+Delta define: #Object as: (
+(Class subclassOf: 'nil' instanceVariables: '')) !
+(Delta mirrorFor: #Object) group: 'kernel' !
+(Delta mirrorFor: #Object) comment: 'The root of the class hierarchy. Every object understands these messages.' !
+
+! (Delta mirrorFor: #Object) methodsFor: 'comparing' !
+
+== other <Object> ^<Boolean>
+	"True if the receiver and the argument are the same object."
+	^{{self primitiveEquivalent: other}}
+!
+
+~~ other <Object> ^<Boolean>
+	^(self == other) not
+!
+
+= other <Object> ^<Boolean>
+	^self == other
+!
+
+~= other <Object> ^<Boolean>
+	^(self = other) not
+!
+
+hash ^<Int>
+	^self identityHash
+!
+
+identityHash ^<Int>
+	^{{self primitiveHash}}
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'accessing' !
+
+class ^<Self class>
+	^{{self primitiveClass}}
+!
+
+yourself ^<Self>
+	^self
+!
+
+value ^<Self>
+	^self
+!
+
+size ^<Int>
+	^{{self primitiveSizeIfFail: [:err <Symbol> | 0]}}
+!
+
+basicSize ^<Int>
+	^{{self primitiveSizeIfFail: [:err <Symbol> | 0]}}
+!
+
+at: index <Int> ^<Object>
+	^{{self primitiveIndexedObjectAt: index ifFail: [:err <Symbol> | self indexError: index]}}
+!
+
+at: index <Int> put: value <Object> ^<Object>
+	^{{self primitiveIndexedObjectAt: index put: value ifFail: [:err <Symbol> | self indexError: index]}}
+!
+
+basicAt: index <Int> ^<Object>
+	^{{self primitiveIndexedObjectAt: index ifFail: [:err <Symbol> | self indexError: index]}}
+!
+
+basicAt: index <Int> put: value <Object> ^<Object>
+	^{{self primitiveIndexedObjectAt: index put: value ifFail: [:err <Symbol> | self indexError: index]}}
+!
+
+instVarAt: index <Int> ^<Object>
+	^{{self primitiveInstVarAt: index ifFail: [:err <Symbol> | self error: 'no instance variable at ', index printString]}}
+!
+
+instVarAt: index <Int> put: value <Object> ^<Object>
+	^{{self primitiveInstVarAt: index put: value ifFail: [:err <Symbol> | self error: 'no instance variable at ', index printString]}}
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'testing' !
+
+isNil ^<Boolean>
+	^false
+!
+
+notNil ^<Boolean>
+	^true
+!
+
+isEmptyOrNil ^<Boolean>
+	^false
+!
+
+ifNil: nilBlock <[^Object]> ^<Object>
+	^self
+!
+
+ifNotNil: aBlock <Object> ^<Object>
+	^aBlock numArgs = 0 ifTrue: [aBlock value] ifFalse: [aBlock value: self]
+!
+
+ifNil: nilBlock <[^Object]> ifNotNil: aBlock <Object> ^<Object>
+	^aBlock numArgs = 0 ifTrue: [aBlock value] ifFalse: [aBlock value: self]
+!
+
+ifNotNil: aBlock <Object> ifNil: nilBlock <[^Object]> ^<Object>
+	^aBlock numArgs = 0 ifTrue: [aBlock value] ifFalse: [aBlock value: self]
+!
+
+isKindOf: aClass <Behavior> ^<Boolean>
+	^self class includesBehavior: aClass
+!
+
+isMemberOf: aClass <Behavior> ^<Boolean>
+	^self class == aClass
+!
+
+respondsTo: selector <Symbol> ^<Boolean>
+	^{{self primitiveRespondsTo: selector}}
+!
+
+isString ^<Boolean>
+	^false
+!
+
+isSymbol ^<Boolean>
+	^false
+!
+
+isCharacter ^<Boolean>
+	^false
+!
+
+isNumber ^<Boolean>
+	^false
+!
+
+isInteger ^<Boolean>
+	^false
+!
+
+isFloat ^<Boolean>
+	^false
+!
+
+isFraction ^<Boolean>
+	^false
+!
+
+isBoolean ^<Boolean>
+	^false
+!
+
+isArray ^<Boolean>
+	^false
+!
+
+isCollection ^<Boolean>
+	^false
+!
+
+isBlock ^<Boolean>
+	^false
+!
+
+isClass ^<Boolean>
+	^false
+!
+
+isPoint ^<Boolean>
+	^false
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'copying' !
+
+copy ^<Self>
+	^self shallowCopy postCopy
+!
+
+shallowCopy ^<Self>
+	^{{self primitiveShallowCopyIfFail: [:err <Symbol> | self]}}
+!
+
+postCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	| c <Self> |
+	c := self shallowCopy.
+	1 to: {{c primitiveInstVarCount}} do: [:i <Int> | c instVarAt: i put: (c instVarAt: i) copy].
+	^c
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'printing' !
+
+printString ^<String>
+	| s <WriteStream> |
+	s := WriteStream on: String new.
+	self printOn: s.
+	^guaranteed <String> s contents
+!
+
+printOn: aStream <WriteStream>
+	| n <String> |
+	n := self class name.
+	aStream nextPutAll: ((n at: 1) isVowel ifTrue: ['an '] ifFalse: ['a ']); nextPutAll: n
+!
+
+displayString ^<String>
+	^self printString
+!
+
+displayOn: aStream <WriteStream>
+	aStream nextPutAll: self displayString
+!
+
+storeString ^<String>
+	^self printString
+!
+
+printNl
+	Transcript show: self printString; cr
+!
+
+displayNl
+	Transcript show: self displayString; cr
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'message handling' !
+
+perform: selector <Symbol> ^<Object>
+	^{{self primitivePerform: selector ifFail: [:err <Symbol> | self error: 'perform: needs a Symbol']}}
+!
+
+perform: selector <Symbol> with: arg1 <Object> ^<Object>
+	^{{self primitivePerform: selector with: arg1 ifFail: [:err <Symbol> | self error: 'perform: needs a Symbol']}}
+!
+
+perform: selector <Symbol> with: arg1 <Object> with: arg2 <Object> ^<Object>
+	^{{self primitivePerform: selector with: arg1 with: arg2 ifFail: [:err <Symbol> | self error: 'perform: needs a Symbol']}}
+!
+
+perform: selector <Symbol> with: arg1 <Object> with: arg2 <Object> with: arg3 <Object> ^<Object>
+	^{{self primitivePerform: selector with: arg1 with: arg2 with: arg3 ifFail: [:err <Symbol> | self error: 'perform: needs a Symbol']}}
+!
+
+perform: selector <Symbol> withArguments: args <Array> ^<Object>
+	^{{self primitivePerform: selector arguments: args ifFail: [:err <Symbol> | self error: 'perform:withArguments: needs a Symbol and an Array']}}
+!
+
+doesNotUnderstand: aMessage <Message> ^<Object>
+	^(MessageNotUnderstood new message: aMessage receiver: self) signal
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'errors' !
+
+error: message <Str> ^<Object>
+	^Error new signal: message
+!
+
+halt ^<Object>
+	^Halt new signal: 'halt'
+!
+
+subclassResponsibility ^<Object>
+	^self error: 'my subclass should have overridden this message'
+!
+
+shouldNotImplement ^<Object>
+	^self error: 'this message is not appropriate for this object'
+!
+
+indexError: index <Object> ^<Object>
+	^SubscriptOutOfBounds new signal: 'index ', index printString, ' is out of bounds'
+!
+
+assert: aBoolean <Boolean> ^<Object>
+	aBoolean ifFalse: [^AssertionFailure new signal: 'assertion failed'].
+	^nil
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'associations' !
+
+-> anObject <Object> ^<Association>
+	^Association key: self value: anObject
+! !
+
+! (Delta mirrorFor: #Object) methodsFor: 'environment' !
+
+inspect ^<Self>
+	{{primitiveInspect: self}}
+!
+
+browse ^<Self>
+	{{primitiveBrowse: self class}}
+! !
+
+Delta define: #UndefinedObject as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #UndefinedObject) group: 'kernel' !
+(Delta mirrorFor: #UndefinedObject) comment: 'The class of nil, the value of every variable before it is assigned.' !
+
+! (Delta mirrorFor: #UndefinedObject) methodsFor: 'testing' !
+
+isNil ^<Boolean>
+	^true
+!
+
+notNil ^<Boolean>
+	^false
+!
+
+isEmptyOrNil ^<Boolean>
+	^true
+!
+
+ifNil: nilBlock <[^Object]> ^<Object>
+	^nilBlock value
+!
+
+ifNotNil: aBlock <Object> ^<Object>
+	^nil
+!
+
+ifNil: nilBlock <[^Object]> ifNotNil: aBlock <Object> ^<Object>
+	^nilBlock value
+!
+
+ifNotNil: aBlock <Object> ifNil: nilBlock <[^Object]> ^<Object>
+	^nilBlock value
+! !
+
+! (Delta mirrorFor: #UndefinedObject) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'nil'
+! !
+
+! (Delta mirrorFor: #UndefinedObject) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !
+
+Delta define: #Boolean as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Boolean) group: 'kernel' !
+(Delta mirrorFor: #Boolean) comment: 'true and false. Conditionals with literal blocks are compiled inline; these methods handle the rest.' !
+
+! (Delta mirrorFor: #Boolean) methodsFor: 'logic' !
+
+& other <Boolean> ^<Boolean>
+	^self subclassResponsibility
+!
+
+| other <Boolean> ^<Boolean>
+	^self subclassResponsibility
+!
+
+not ^<Boolean>
+	^self subclassResponsibility
+!
+
+and: aBlock <[^Boolean]> ^<Boolean>
+	^self subclassResponsibility
+!
+
+or: aBlock <[^Boolean]> ^<Boolean>
+	^self subclassResponsibility
+!
+
+xor: other <Boolean> ^<Boolean>
+	^self ~= other
+!
+
+eqv: other <Boolean> ^<Boolean>
+	^self == other
+! !
+
+! (Delta mirrorFor: #Boolean) methodsFor: 'controlling' !
+
+ifTrue: trueBlock <[^Object]> ^<Object>
+	^self subclassResponsibility
+!
+
+ifFalse: falseBlock <[^Object]> ^<Object>
+	^self subclassResponsibility
+!
+
+ifTrue: trueBlock <[^Object]> ifFalse: falseBlock <[^Object]> ^<Object>
+	^self subclassResponsibility
+!
+
+ifFalse: falseBlock <[^Object]> ifTrue: trueBlock <[^Object]> ^<Object>
+	^self subclassResponsibility
+! !
+
+! (Delta mirrorFor: #Boolean) methodsFor: 'testing' !
+
+isBoolean ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Boolean) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !
+
+Delta define: #True as: (
+(Class subclassOf: 'Boolean' instanceVariables: '')) !
+(Delta mirrorFor: #True) group: 'kernel' !
+
+! (Delta mirrorFor: #True) methodsFor: 'logic' !
+
+& other <Boolean> ^<Boolean>
+	^other
+!
+
+| other <Boolean> ^<Boolean>
+	^true
+!
+
+not ^<Boolean>
+	^false
+!
+
+and: aBlock <[^Boolean]> ^<Boolean>
+	^aBlock value
+!
+
+or: aBlock <[^Boolean]> ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #True) methodsFor: 'controlling' !
+
+ifTrue: trueBlock <[^Object]> ^<Object>
+	^trueBlock value
+!
+
+ifFalse: falseBlock <[^Object]> ^<Object>
+	^nil
+!
+
+ifTrue: trueBlock <[^Object]> ifFalse: falseBlock <[^Object]> ^<Object>
+	^trueBlock value
+!
+
+ifFalse: falseBlock <[^Object]> ifTrue: trueBlock <[^Object]> ^<Object>
+	^trueBlock value
+! !
+
+! (Delta mirrorFor: #True) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'true'
+! !
+
+Delta define: #False as: (
+(Class subclassOf: 'Boolean' instanceVariables: '')) !
+(Delta mirrorFor: #False) group: 'kernel' !
+
+! (Delta mirrorFor: #False) methodsFor: 'logic' !
+
+& other <Boolean> ^<Boolean>
+	^false
+!
+
+| other <Boolean> ^<Boolean>
+	^other
+!
+
+not ^<Boolean>
+	^true
+!
+
+and: aBlock <[^Boolean]> ^<Boolean>
+	^false
+!
+
+or: aBlock <[^Boolean]> ^<Boolean>
+	^aBlock value
+! !
+
+! (Delta mirrorFor: #False) methodsFor: 'controlling' !
+
+ifTrue: trueBlock <[^Object]> ^<Object>
+	^nil
+!
+
+ifFalse: falseBlock <[^Object]> ^<Object>
+	^falseBlock value
+!
+
+ifTrue: trueBlock <[^Object]> ifFalse: falseBlock <[^Object]> ^<Object>
+	^falseBlock value
+!
+
+ifFalse: falseBlock <[^Object]> ifTrue: trueBlock <[^Object]> ^<Object>
+	^falseBlock value
+! !
+
+! (Delta mirrorFor: #False) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'false'
+! !
+
+Delta define: #Message as: (
+(Class subclassOf: 'Object' instanceVariables: 'receiver <Object> selector <Symbol> arguments <Array>')) !
+(Delta mirrorFor: #Message) group: 'kernel' !
+(Delta mirrorFor: #Message) comment: 'A message that was sent but not understood: its receiver, selector and arguments, in the order the VM fills them in.' !
+
+! (Delta mirrorFor: #Message) classSide methodsFor: 'instance creation' !
+
+selector: s <Symbol> arguments: args <Array> ^<Instance>
+	^self new setSelector: s arguments: args
+!
+
+receiver: r <Object> selector: s <Symbol> arguments: args <Array> ^<Instance>
+	^self new setReceiver: r selector: s arguments: args
+! !
+
+! (Delta mirrorFor: #Message) methodsFor: 'accessing' !
+
+receiver ^<Object>
+	^receiver
+!
+
+selector ^<Symbol>
+	^selector
+!
+
+arguments ^<Array>
+	^arguments
+!
+
+setSelector: s <Symbol> arguments: args <Array> ^<Self>
+	selector := s.
+	arguments := args
+!
+
+setReceiver: r <Object> selector: s <Symbol> arguments: args <Array> ^<Self>
+	receiver := r.
+	selector := s.
+	arguments := args
+!
+
+sendTo: anObject <Object> ^<Object>
+	^anObject perform: selector withArguments: arguments
+! !
+
+! (Delta mirrorFor: #Message) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'a Message(#'; nextPutAll: selector; nextPutAll: ')'
+! !
+
+Delta define: #BlockClosure as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #BlockClosure) group: 'kernel' !
+(Delta mirrorFor: #BlockClosure) comment: 'A block of code with its surrounding variables: [:x <Int> | x + 1]. Its type is written [Int, ^Int].' !
+
+! (Delta mirrorFor: #BlockClosure) methodsFor: 'evaluating' !
+
+numArgs ^<Int>
+	^{{self primitiveBlockNumArgs}}
+!
+
+value ^<Object>
+	^{{self primitiveValueWithArguments: #() ifFail: [:err <Symbol> | self numArgsError: 0]}}
+!
+
+value: a <Object> ^<Object>
+	^{{self primitiveValueWithArguments: {a} ifFail: [:err <Symbol> | self numArgsError: 1]}}
+!
+
+value: a <Object> value: b <Object> ^<Object>
+	^{{self primitiveValueWithArguments: {a. b} ifFail: [:err <Symbol> | self numArgsError: 2]}}
+!
+
+value: a <Object> value: b <Object> value: c <Object> ^<Object>
+	^{{self primitiveValueWithArguments: {a. b. c} ifFail: [:err <Symbol> | self numArgsError: 3]}}
+!
+
+value: a <Object> value: b <Object> value: c <Object> value: d <Object> ^<Object>
+	^{{self primitiveValueWithArguments: {a. b. c. d} ifFail: [:err <Symbol> | self numArgsError: 4]}}
+!
+
+valueWithArguments: args <Array> ^<Object>
+	^{{self primitiveValueWithArguments: args ifFail: [:err <Symbol> | self numArgsError: args size]}}
+!
+
+numArgsError: n <Int> ^<Object>
+	^self error: 'this block takes ', self numArgs printString, ' argument(s), not ', n printString
+! !
+
+! (Delta mirrorFor: #BlockClosure) methodsFor: 'controlling' !
+
+whileTrue: aBlock <[^Object]> ^<Object>
+	^[self value] whileTrue: [aBlock value]
+!
+
+whileFalse: aBlock <[^Object]> ^<Object>
+	^[self value] whileFalse: [aBlock value]
+!
+
+whileTrue ^<Object>
+	^[self value] whileTrue
+!
+
+whileFalse ^<Object>
+	^[self value] whileFalse
+!
+
+repeat ^<Object>
+	[self value] repeat
+! !
+
+! (Delta mirrorFor: #BlockClosure) methodsFor: 'exceptions' !
+
+on: exceptionClass <Object> do: handler <Object> ^<Object>
+	^{{self primitiveOnException: exceptionClass do: handler}}
+!
+
+ensure: aBlock <[^Object]> ^<Object>
+	^{{self primitiveEnsure: aBlock}}
+!
+
+ifCurtailed: aBlock <[^Object]> ^<Object>
+	^{{self primitiveIfCurtailed: aBlock}}
+! !
+
+! (Delta mirrorFor: #BlockClosure) methodsFor: 'processes' !
+
+fork ^<Object>
+	"This version has no process scheduler: the block runs to completion right away."
+	self value.
+	^nil
+! !
+
+! (Delta mirrorFor: #BlockClosure) methodsFor: 'testing' !
+
+isBlock ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #BlockClosure) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'a BlockClosure'
+! !
+
+Delta define: #Behavior as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Behavior) group: 'kernel' !
+(Delta mirrorFor: #Behavior) comment: 'What every class and metaclass knows: how to make instances and how to describe itself.' !
+
+! (Delta mirrorFor: #Behavior) methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^{{self primitiveNewIfFail: [:err <Symbol> | self error: 'cannot create instances of ', self name, ' with new']}}
+!
+
+basicNew ^<Instance>
+	^{{self primitiveNewIfFail: [:err <Symbol> | self error: 'cannot create instances of ', self name, ' with new']}}
+!
+
+new: size <Int> ^<Instance>
+	^{{self primitiveNew: size ifFail: [:err <Symbol> | self error: self name, ' instances have no indexed slots (', err, ')']}}
+!
+
+basicNew: size <Int> ^<Instance>
+	^{{self primitiveNew: size ifFail: [:err <Symbol> | self error: self name, ' instances have no indexed slots (', err, ')']}}
+! !
+
+! (Delta mirrorFor: #Behavior) methodsFor: 'accessing' !
+
+allSuperclasses ^<OrderedCollection>
+	| r <OrderedCollection> c <Object> |
+	r := OrderedCollection new.
+	c := self superclass.
+	[c isNil] whileFalse: [r add: c. c := c superclass].
+	^r
+!
+
+allSubclasses ^<OrderedCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self subclasses do: [:c | r add: c; addAll: c allSubclasses].
+	^r
+!
+
+withAllSubclasses ^<OrderedCollection>
+	^self allSubclasses addFirst: self; yourself
+!
+
+methodCount ^<Int>
+	^self selectors size
+! !
+
+! (Delta mirrorFor: #Behavior) methodsFor: 'testing' !
+
+isClass ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Behavior) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: self name
+! !
+
+! (Delta mirrorFor: #Behavior) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !
+
+! (Delta mirrorFor: #Behavior) methodsFor: 'environment' !
+
+browse ^<Self>
+	{{primitiveBrowse: self}}
+! !

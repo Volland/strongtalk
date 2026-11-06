@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Why the Strongtalk VM was so fast</title>
+  <meta name="description" content="Tagged integers, inline caches, type feedback and adaptive optimization in the Strongtalk virtual machine.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="../"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a href="history.html">History</a>
+        <a href="types.html">Types</a>
+        <a class="on" href="vm.html">The VM</a>
+        <a href="this-edition.html">This edition</a>
+        <a href="https://github.com/Volland/strongtalk">GitHub</a>
+        <a class="cta" href="../try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="article">
+    <span class="kicker">Implementation</span>
+    <h1>Why the VM was so fast</h1>
+    <p class="dek">Strongtalk's speed did not come from its types. It came from watching the program run.</p>
+
+    <h2>Every value is a tagged word</h2>
+    <p>In the 32-bit VM every value fits in one machine word. The low two bits say what it is: <code>00</code>
+      for a SmallInteger, whose value is the other 30 bits, and <code>01</code> for a pointer to an object in the
+      heap. So the range of a SmallInteger is −536,870,912 to 536,870,911; anything bigger becomes a
+      LargeInteger, automatically and invisibly. Adding two SmallIntegers is a couple of machine instructions,
+      with no memory allocated.</p>
+
+    <h2>Primitives with failure codes</h2>
+    <p>Basic operations — arithmetic, indexing, creating objects — are <i>primitives</i> written inside the VM. Smalltalk
+      code calls them with a special syntax and says what to do if they fail:</p>
+<pre><code>+ other &lt;Number&gt; ^&lt;Number&gt;
+    ^{{self primitiveAdd: other
+        ifFail: [:err &lt;Symbol&gt; | self retry: #+ coercing: other]}}</code></pre>
+    <p>A primitive that cannot do its job answers a symbol such as <code>#SmallIntegerOverflow</code>,
+      <code>#DivisionByZero</code>, <code>#OutOfBounds</code> or <code>#FirstArgumentHasWrongType</code> — the VM
+      defines 136 of them — and the Smalltalk code decides what happens next, for example redoing the sum with
+      LargeIntegers.</p>
+
+    <h2>Interpret first, then optimize what matters</h2>
+    <p>New code starts in a fast interpreter. Every message send site keeps an <i>inline cache</i> recording the
+      classes of the objects it has seen and the method each one used. Counters notice methods that run often.
+      When a method gets hot, the optimizing compiler reads those caches — the <i>type feedback</i> — and
+      compiles specialised machine code: it inlines the methods actually used, replaces sends with direct calls
+      and keeps the common case on a fast path, with a check that falls back if a surprise turns up.</p>
+    <p>The compiler also recognises the core control messages — <code>ifTrue:</code>, <code>ifFalse:</code>,
+      <code>and:</code>, <code>or:</code>, <code>whileTrue:</code>, <code>to:by:do:</code> and <code>value</code> — and
+      turns them into plain jumps when their arguments are literal blocks.</p>
+
+    <h2>Deoptimization</h2>
+    <p>Optimized code makes assumptions. When one stops holding — a class is redefined, a method changed — the VM
+      turns optimized activations back into ordinary ones and carries on. That is what let Strongtalk keep
+      Smalltalk's live, change-anything development style while running fast.</p>
+
+    <h2>Why the types weren't used for speed</h2>
+    <p>It sounds natural to use declared types to generate faster code, but Strongtalk deliberately didn't.
+      Types are optional and describe protocols, not classes, so they would rarely say exactly which method will
+      run. Run-time feedback says precisely that. Keeping the two separate meant the types could stay purely about
+      correctness — and the same ideas could be carried into Java, where they became HotSpot.</p>
+
+    <p class="note">This site's edition keeps the tagged-integer range, the primitives and their failure codes,
+      and inlines the same control messages; it runs bytecode in an interpreter rather than generating machine
+      code. See <a href="this-edition.html">how this edition was made</a>.</p>
+
+    <div class="next"><a href="types.html">← The type system</a><a href="this-edition.html">Next: this edition →</a></div>
+  </article>
+
+  <footer class="foot"><div class="in"><span>Strongtalk — an independent Rust/WebAssembly edition.</span><span class="links"><a href="../try/">Try it</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span></div></footer>
+</body>
+</html>

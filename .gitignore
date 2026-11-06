@@ -1,0 +1,7 @@
+# build output and caches (dist/ is published to the gh-pages branch, not committed here)
+dist/
+vm/target/
+node_modules/
+.omc/
+.DS_Store
+.gstack/

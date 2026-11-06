@@ -1,0 +1,487 @@
+"Strings, symbols and streams."
+
+Delta define: #String as: (
+(Class subclassOf: 'ArrayedCollection[Character]' instanceVariables: '')) !
+(Delta mirrorFor: #String) group: 'text' !
+(Delta mirrorFor: #String) comment: 'Sequences of characters, written ''like this''. Strings can be changed in place with at:put:.' !
+
+! (Delta mirrorFor: #String) classSide methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^self new: 0
+!
+
+cr ^<String>
+	^self with: Character lf
+!
+
+lf ^<String>
+	^self with: Character lf
+!
+
+tab ^<String>
+	^self with: Character tab
+!
+
+space ^<String>
+	^self with: Character space
+! !
+
+! (Delta mirrorFor: #String) methodsFor: 'accessing' !
+
+at: index <Int> ^<Character>
+	^{{self primitiveIndexedByteCharacterAt: index ifFail: [:err <Symbol> | self indexError: index]}}
+!
+
+at: index <Int> put: c <Character> ^<Character>
+	"The VM stores the character's byte value (0x4d3210): only the 256 Characters fit."
+	c isCharacter ifFalse: [^self error: 'only characters can be stored in a string'].
+	{{self primitiveIndexedByteAt: index put: c value ifFail: [:err <Symbol> |
+		err == #OutOfBounds ifTrue: [^self indexError: index].
+		err == #ValueOutOfRange ifTrue: [^self error: 'only characters with codes 0-255 can be stored in a string'].
+		^self error: 'at:put: failed (', err, ')']}}.
+	^c
+!
+
+indexOf: c <Character> ^<Int>
+	^{{self primitiveStringIndexOf: c startingAt: 1 ifFail: [:err <Symbol> | 0]}}
+!
+
+indexOf: c <Character> startingAt: start <Int> ^<Int>
+	^{{self primitiveStringIndexOf: c startingAt: start ifFail: [:err <Symbol> | 0]}}
+!
+
+indexOfSubCollection: s <String> ^<Int>
+	^{{self primitiveStringIndexOf: s startingAt: 1 ifFail: [:err <Symbol> | 0]}}
+!
+
+lines ^<Array>
+	^{{self primitiveStringLinesIfFail: [:err <Symbol> | #()]}}
+!
+
+substrings ^<Array>
+	^{{self primitiveStringSubstrings: nil ifFail: [:err <Symbol> | #()]}}
+!
+
+substrings: separators <String> ^<Array>
+	^{{self primitiveStringSubstrings: separators ifFail: [:err <Symbol> | #()]}}
+!
+
+subStrings: separators <String> ^<Array>
+	^self substrings: separators
+! !
+
+! (Delta mirrorFor: #String) methodsFor: 'comparing' !
+
+= other <Object> ^<Boolean>
+	other isString ifFalse: [^false].
+	^{{self primitiveStringEqual: other}}
+!
+
+< other <String> ^<Boolean>
+	^{{self primitiveIndexedByteCompare: other ifFail: [:err <Symbol> | self error: 'strings can only be compared with strings']}} < 0
+!
+
+> other <String> ^<Boolean>
+	^{{self primitiveIndexedByteCompare: other ifFail: [:err <Symbol> | self error: 'strings can only be compared with strings']}} > 0
+!
+
+<= other <String> ^<Boolean>
+	^{{self primitiveIndexedByteCompare: other ifFail: [:err <Symbol> | self error: 'strings can only be compared with strings']}} <= 0
+!
+
+>= other <String> ^<Boolean>
+	^{{self primitiveIndexedByteCompare: other ifFail: [:err <Symbol> | self error: 'strings can only be compared with strings']}} >= 0
+!
+
+max: other <String> ^<String>
+	^self > other ifTrue: [self] ifFalse: [other]
+!
+
+min: other <String> ^<String>
+	^self < other ifTrue: [self] ifFalse: [other]
+!
+
+hash ^<Int>
+	^{{self primitiveStringHash}}
+!
+
+sameAs: other <String> ^<Boolean>
+	^self asLowercase = other asLowercase
+!
+
+includesSubstring: s <String> ^<Boolean>
+	^(self indexOfSubCollection: s) > 0
+!
+
+beginsWith: prefix <String> ^<Boolean>
+	^self size >= prefix size and: [(self copyFrom: 1 to: prefix size) = prefix]
+!
+
+startsWith: prefix <String> ^<Boolean>
+	^self beginsWith: prefix
+!
+
+endsWith: suffix <String> ^<Boolean>
+	^self size >= suffix size and: [(self copyFrom: self size - suffix size + 1 to: self size) = suffix]
+! !
+
+! (Delta mirrorFor: #String) methodsFor: 'converting' !
+
+asString ^<String>
+	^self
+!
+
+asSymbol ^<Symbol>
+	^{{self primitiveIndexedByteInternIfFail: [:err <Symbol> | self error: 'cannot make a symbol']}}
+!
+
+asUppercase ^<String>
+	^{{self primitiveStringAsUppercaseIfFail: [:err <Symbol> | self]}}
+!
+
+asLowercase ^<String>
+	^{{self primitiveStringAsLowercaseIfFail: [:err <Symbol> | self]}}
+!
+
+asNumber ^<Number>
+	^{{self primitiveStringAsNumberIfFail: [:err <Symbol> | nil]}}
+!
+
+asInteger ^<Int>
+	| n <Number> |
+	n := self asNumber.
+	^n isNil ifTrue: [nil] ifFalse: [n truncated]
+!
+
+capitalized ^<String>
+	| s <String> |
+	self isEmpty ifTrue: [^self].
+	s := self copy.
+	s at: 1 put: (s at: 1) asUppercase.
+	^s
+!
+
+trimSeparators ^<String>
+	^{{self primitiveStringTrimIfFail: [:err <Symbol> | self]}}
+!
+
+trimBoth ^<String>
+	^self trimSeparators
+!
+
+reversed ^<String>
+	^{{self primitiveStringReversedIfFail: [:err <Symbol> | self]}}
+!
+
+copyReplaceAll: old <String> with: new <String> ^<String>
+	^{{self primitiveStringReplaceAll: old with: new ifFail: [:err <Symbol> | self error: 'copyReplaceAll:with: needs strings']}}
+!
+
+replaceAll: old <Character> with: new <Character> ^<Self>
+	1 to: self size do: [:i <Int> | (self at: i) = old ifTrue: [self at: i put: new]]
+!
+
+, other <String> ^<String>
+	^{{self primitiveStringConcatenate: other ifFail: [:err <Symbol> |
+		self error: 'a string can only be joined with another string (got ', other printString, ')']}}
+!
+
+join: aCollection <Collection> ^<String>
+	| s <WriteStream> |
+	s := WriteStream on: String new.
+	aCollection do: [:e <Object> | s nextPutAll: e displayString] separatedBy: [s nextPutAll: self].
+	^guaranteed <String> s contents
+!
+
+asArray ^<Array>
+	^Array withAll: self
+!
+
+displayString ^<String>
+	^self
+!
+
+species ^<Behavior>
+	^String
+! !
+
+! (Delta mirrorFor: #String) methodsFor: 'testing' !
+
+isString ^<Boolean>
+	^true
+!
+
+isEmpty ^<Boolean>
+	^self size = 0
+! !
+
+! (Delta mirrorFor: #String) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPut: $'.
+	self do: [:c <Character> |
+		aStream nextPut: c.
+		c = $' ifTrue: [aStream nextPut: $']].
+	aStream nextPut: $'
+!
+
+displayNl
+	Transcript show: self; cr
+! !
+
+Delta define: #Symbol as: (
+(Class subclassOf: 'String' instanceVariables: '')) !
+(Delta mirrorFor: #Symbol) group: 'text' !
+(Delta mirrorFor: #Symbol) comment: 'Unique, unchangeable strings used as message names: #at:put:, #+, #name.' !
+
+! (Delta mirrorFor: #Symbol) methodsFor: 'accessing' !
+
+at: index <Int> put: c <Character> ^<Character>
+	^self error: 'symbols cannot be changed'
+!
+
+numArgs ^<Int>
+	^{{self primitiveSymbolNumArgsIfFail: [:err <Symbol> | 0]}}
+!
+
+value: anObject <Object> ^<Object>
+	^anObject perform: self
+!
+
+value: a <Object> value: b <Object> ^<Object>
+	^a perform: self with: b
+! !
+
+! (Delta mirrorFor: #Symbol) methodsFor: 'comparing' !
+
+= other <Object> ^<Boolean>
+	^self == other
+!
+
+hash ^<Int>
+	^{{self primitiveStringHash}}
+! !
+
+! (Delta mirrorFor: #Symbol) methodsFor: 'converting' !
+
+asString ^<String>
+	^{{self primitiveSymbolAsStringIfFail: [:err <Symbol> | '']}}
+!
+
+asSymbol ^<Symbol>
+	^self
+!
+
+displayString ^<String>
+	^self asString
+! !
+
+! (Delta mirrorFor: #Symbol) methodsFor: 'testing' !
+
+isSymbol ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Symbol) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPut: $#; nextPutAll: self asString
+! !
+
+! (Delta mirrorFor: #Symbol) methodsFor: 'copying' !
+
+shallowCopy ^<Self>
+	^self
+!
+
+deepCopy ^<Self>
+	^self
+! !
+
+Delta define: #Stream as: (
+(Class subclassOf: 'Object' instanceVariables: '')) !
+(Delta mirrorFor: #Stream) group: 'streams' !
+(Delta mirrorFor: #Stream) comment: 'Sequential access to the elements of a collection.' !
+
+Delta define: #ReadStream as: (
+(Class subclassOf: 'Stream' instanceVariables: 'collection <SequenceableCollection> position <Int>')) !
+(Delta mirrorFor: #ReadStream) group: 'streams' !
+(Delta mirrorFor: #ReadStream) comment: 'Reads the elements of a sequence one at a time: next, peek, atEnd, upTo:.' !
+
+! (Delta mirrorFor: #ReadStream) classSide methodsFor: 'instance creation' !
+
+on: aCollection <SequenceableCollection> ^<Instance>
+	^self basicNew setOn: aCollection
+! !
+
+! (Delta mirrorFor: #ReadStream) methodsFor: 'accessing' !
+
+setOn: aCollection <SequenceableCollection> ^<Self>
+	collection := aCollection.
+	position := 0
+!
+
+next ^<Object>
+	position >= collection size ifTrue: [^nil].
+	position := position + 1.
+	^collection at: position
+!
+
+next: n <Int> ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	[r size < n and: [self atEnd not]] whileTrue: [r add: self next].
+	^collection species withAll: r
+!
+
+peek ^<Object>
+	position >= collection size ifTrue: [^nil].
+	^collection at: position + 1
+!
+
+atEnd ^<Boolean>
+	^position >= collection size
+!
+
+skip: n <Int> ^<Self>
+	position := (position + n min: collection size) max: 0
+!
+
+skipSeparators ^<Self>
+	[self atEnd not and: [self peek isSeparator]] whileTrue: [self next]
+!
+
+upTo: element <Object> ^<SequenceableCollection>
+	| r <OrderedCollection> e <Object> |
+	r := OrderedCollection new.
+	[self atEnd or: [(e := self next) = element]] whileFalse: [r add: e].
+	^collection species withAll: r
+!
+
+upToEnd ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	[self atEnd] whileFalse: [r add: self next].
+	^collection species withAll: r
+!
+
+position ^<Int>
+	^position
+!
+
+position: n <Int> ^<Self>
+	position := n
+!
+
+reset ^<Self>
+	position := 0
+!
+
+do: aBlock <[Object, ^Object]> ^<Self>
+	[self atEnd] whileFalse: [aBlock value: self next]
+!
+
+contents ^<SequenceableCollection>
+	^collection
+! !
+
+Delta define: #WriteStream as: (
+(Class subclassOf: 'Stream' instanceVariables: 'collection <Object>')) !
+(Delta mirrorFor: #WriteStream) group: 'streams' !
+(Delta mirrorFor: #WriteStream) comment: 'Builds a string (or array) piece by piece: nextPutAll:, nextPut:, print:, cr, then contents.' !
+
+! (Delta mirrorFor: #WriteStream) classSide methodsFor: 'instance creation' !
+
+on: aCollection <SequenceableCollection> ^<Instance>
+	^self basicNew setOn: aCollection
+!
+
+with: aCollection <SequenceableCollection> ^<Instance>
+	^self basicNew setWith: aCollection
+! !
+
+! (Delta mirrorFor: #WriteStream) methodsFor: 'private' !
+
+setOn: aCollection <SequenceableCollection> ^<Self>
+	collection := aCollection isString
+		ifTrue: [String new]
+		ifFalse: [OrderedCollection new]
+!
+
+setWith: aCollection <SequenceableCollection> ^<Self>
+	collection := aCollection isString
+		ifTrue: [aCollection copy]
+		ifFalse: [OrderedCollection withAll: aCollection]
+! !
+
+! (Delta mirrorFor: #WriteStream) methodsFor: 'writing' !
+
+nextPutAll: aCollection <Object> ^<Object>
+	collection isString
+		ifTrue: [{{collection primitiveStringAppend: aCollection ifFail: [:err <Symbol> |
+			aCollection do: [:c <Object> | self nextPut: c]]}}]
+		ifFalse: [collection addAll: aCollection].
+	^aCollection
+!
+
+nextPut: anObject <Object> ^<Object>
+	collection isString
+		ifTrue: [{{collection primitiveStringAppend: anObject ifFail: [:err <Symbol> |
+			self error: 'only characters can be written to a string stream']}}]
+		ifFalse: [collection add: anObject].
+	^anObject
+!
+
+print: anObject <Object> ^<Self>
+	anObject printOn: self
+!
+
+display: anObject <Object> ^<Self>
+	self nextPutAll: anObject displayString
+!
+
+<< anObject <Object> ^<Self>
+	anObject isString
+		ifTrue: [self nextPutAll: anObject]
+		ifFalse: [self nextPutAll: anObject displayString]
+!
+
+cr ^<Self>
+	self nextPut: Character lf
+!
+
+nl ^<Self>
+	self nextPut: Character lf
+!
+
+tab ^<Self>
+	self nextPut: Character tab
+!
+
+space ^<Self>
+	self nextPut: Character space
+!
+
+space: n <Int> ^<Self>
+	n timesRepeat: [self nextPut: Character space]
+!
+
+tab: n <Int> ^<Self>
+	n timesRepeat: [self nextPut: Character tab]
+! !
+
+! (Delta mirrorFor: #WriteStream) methodsFor: 'accessing' !
+
+contents ^<Object>
+	collection isString ifTrue: [^collection copy].
+	^collection asArray
+!
+
+size ^<Int>
+	^collection size
+!
+
+isEmpty ^<Boolean>
+	^collection isEmpty
+! !

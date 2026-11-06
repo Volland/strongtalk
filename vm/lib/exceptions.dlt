@@ -1,0 +1,231 @@
+"ANSI-style exceptions: signal, on:do:, ensure:, return:, retry, resume:, pass."
+
+Delta define: #Exception as: (
+(Class subclassOf: 'Object' instanceVariables: 'messageText <Str> handlerId signalId')) !
+(Delta mirrorFor: #Exception) group: 'exceptions' !
+(Delta mirrorFor: #Exception) comment: 'Something unusual that code can signal and handlers can catch with on:do:. Handlers run before the stack unwinds.' !
+
+! (Delta mirrorFor: #Exception) classSide methodsFor: 'signalling' !
+
+signal ^<Object>
+	^self new signal
+!
+
+signal: message <Str> ^<Object>
+	^self new signal: message
+!
+
+handles: anException <Exception> ^<Boolean>
+	^anException isKindOf: self
+!
+
+, another <Object> ^<ExceptionSet>
+	^ExceptionSet new add: self; add: another; yourself
+! !
+
+! (Delta mirrorFor: #Exception) methodsFor: 'signalling' !
+
+signal ^<Object>
+	^{{self primitiveSignal}}
+!
+
+signal: message <Str> ^<Object>
+	messageText := message.
+	^self signal
+!
+
+outer ^<Object>
+	| h <Object> s <Object> v <Object> |
+	h := handlerId.
+	s := signalId.
+	v := {{self primitiveSignal}}.
+	handlerId := h.
+	signalId := s.
+	^v
+!
+
+pass ^<Object>
+	^self isResumable
+		ifTrue: [self resume: self outer]
+		ifFalse: [self outer]
+!
+
+defaultAction ^<Object>
+	^{{self primitiveUnhandledError}}
+! !
+
+! (Delta mirrorFor: #Exception) methodsFor: 'handling' !
+
+return: value <Object> ^<Object>
+	^{{self primitiveExceptionReturn: value}}
+!
+
+return ^<Object>
+	^self return: nil
+!
+
+retry ^<Object>
+	^{{self primitiveExceptionRetry}}
+!
+
+resume: value <Object> ^<Object>
+	self isResumable ifFalse: [^IllegalResumeAttempt new signal: self class name, ' cannot be resumed'].
+	^{{self primitiveExceptionResume: value}}
+!
+
+resume ^<Object>
+	^self resume: nil
+!
+
+isResumable ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Exception) methodsFor: 'accessing' !
+
+messageText ^<Str>
+	^messageText isNil ifTrue: [self description] ifFalse: [messageText]
+!
+
+messageText: text <Str> ^<Self>
+	messageText := text
+!
+
+description ^<Str>
+	^messageText isNil ifTrue: [self class name] ifFalse: [messageText]
+! !
+
+! (Delta mirrorFor: #Exception) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: self class name.
+	messageText isNil ifFalse: [aStream nextPutAll: ': '; nextPutAll: messageText]
+! !
+
+Delta define: #Error as: (
+(Class subclassOf: 'Exception' instanceVariables: '')) !
+(Delta mirrorFor: #Error) group: 'exceptions' !
+(Delta mirrorFor: #Error) comment: 'Program errors. When nothing handles one, evaluation stops and the error is reported with its stack.' !
+
+! (Delta mirrorFor: #Error) methodsFor: 'handling' !
+
+isResumable ^<Boolean>
+	^false
+! !
+
+Delta define: #ArithmeticError as: (
+(Class subclassOf: 'Error' instanceVariables: '')) !
+(Delta mirrorFor: #ArithmeticError) group: 'exceptions' !
+
+Delta define: #ZeroDivide as: (
+(Class subclassOf: 'ArithmeticError' instanceVariables: 'dividend <Number>')) !
+(Delta mirrorFor: #ZeroDivide) group: 'exceptions' !
+
+! (Delta mirrorFor: #ZeroDivide) methodsFor: 'accessing' !
+
+dividend ^<Number>
+	^dividend
+!
+
+dividend: n <Number> ^<Self>
+	dividend := n
+!
+
+isResumable ^<Boolean>
+	^true
+! !
+
+Delta define: #MessageNotUnderstood as: (
+(Class subclassOf: 'Error' instanceVariables: 'message <Message> receiver <Object>')) !
+(Delta mirrorFor: #MessageNotUnderstood) group: 'exceptions' !
+(Delta mirrorFor: #MessageNotUnderstood) comment: 'Signalled when an object receives a message it has no method for.' !
+
+! (Delta mirrorFor: #MessageNotUnderstood) methodsFor: 'accessing' !
+
+message: aMessage <Message> receiver: anObject <Object> ^<Self>
+	message := aMessage.
+	receiver := anObject
+!
+
+message ^<Message>
+	^message
+!
+
+receiver ^<Object>
+	^receiver
+!
+
+description ^<Str>
+	| who <String> |
+	who := (receiver isNil or: [receiver isClass])
+		ifTrue: [receiver printString]
+		ifFalse: [((receiver class name at: 1) isVowel ifTrue: ['an '] ifFalse: ['a ']), receiver class name].
+	^who, ' does not understand #', message selector
+!
+
+isResumable ^<Boolean>
+	^true
+! !
+
+Delta define: #SubscriptOutOfBounds as: (
+(Class subclassOf: 'Error' instanceVariables: '')) !
+(Delta mirrorFor: #SubscriptOutOfBounds) group: 'exceptions' !
+
+Delta define: #KeyNotFound as: (
+(Class subclassOf: 'Error' instanceVariables: '')) !
+(Delta mirrorFor: #KeyNotFound) group: 'exceptions' !
+
+Delta define: #AssertionFailure as: (
+(Class subclassOf: 'Error' instanceVariables: '')) !
+(Delta mirrorFor: #AssertionFailure) group: 'exceptions' !
+
+Delta define: #IllegalResumeAttempt as: (
+(Class subclassOf: 'Error' instanceVariables: '')) !
+(Delta mirrorFor: #IllegalResumeAttempt) group: 'exceptions' !
+
+Delta define: #Halt as: (
+(Class subclassOf: 'Exception' instanceVariables: '')) !
+(Delta mirrorFor: #Halt) group: 'exceptions' !
+
+Delta define: #Notification as: (
+(Class subclassOf: 'Exception' instanceVariables: '')) !
+(Delta mirrorFor: #Notification) group: 'exceptions' !
+(Delta mirrorFor: #Notification) comment: 'Exceptions that do nothing when unhandled: signal simply answers nil.' !
+
+! (Delta mirrorFor: #Notification) methodsFor: 'signalling' !
+
+defaultAction ^<Object>
+	^nil
+! !
+
+Delta define: #Warning as: (
+(Class subclassOf: 'Exception' instanceVariables: '')) !
+(Delta mirrorFor: #Warning) group: 'exceptions' !
+(Delta mirrorFor: #Warning) comment: 'When unhandled, a warning is written to the Transcript and the program continues.' !
+
+! (Delta mirrorFor: #Warning) methodsFor: 'signalling' !
+
+defaultAction ^<Object>
+	Transcript show: 'Warning: ', self messageText; cr.
+	^nil
+! !
+
+Delta define: #ExceptionSet as: (
+(Class subclassOf: 'Object' instanceVariables: 'exceptions <OrderedCollection>')) !
+(Delta mirrorFor: #ExceptionSet) group: 'exceptions' !
+(Delta mirrorFor: #ExceptionSet) comment: 'Several exception classes handled by one handler, made with ZeroDivide, MessageNotUnderstood.' !
+
+! (Delta mirrorFor: #ExceptionSet) methodsFor: 'accessing' !
+
+add: anExceptionClass <Object> ^<Object>
+	exceptions isNil ifTrue: [exceptions := OrderedCollection new].
+	^exceptions add: anExceptionClass
+!
+
+, another <Object> ^<ExceptionSet>
+	self add: another
+!
+
+handles: anException <Exception> ^<Boolean>
+	^exceptions anySatisfy: [:e <Object> | e handles: anException]
+! !

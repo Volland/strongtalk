@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strongtalk — Smalltalk with types, running in your browser</title>
+  <meta name="description" content="Strongtalk, the typed Smalltalk whose virtual machine led to Java HotSpot, re-implemented in Rust and running in your browser through WebAssembly.">
+  <meta name="theme-color" content="#0b1830">
+  <meta property="og:title" content="Strongtalk — Smalltalk with types, in your browser">
+  <meta property="og:description" content="The typed Smalltalk whose VM became HotSpot, re-built in Rust and compiled to WebAssembly. Run it now.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="./"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a href="articles/history.html">History</a>
+        <a href="articles/types.html">Types</a>
+        <a href="articles/vm.html">The VM</a>
+        <a href="articles/this-edition.html">This edition</a>
+        <a class="gh" href="https://github.com/Volland/strongtalk" aria-label="Source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <a class="cta" href="try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="in">
+      <div>
+        <div class="eyebrow"><span class="pill">new</span> Rust VM · compiled to WebAssembly</div>
+        <h1>Smalltalk, with <em>types</em> that never get in the way<span class="ang">&lt;Self&gt;</span></h1>
+        <p class="lede">Strongtalk was the 1990s Smalltalk with an <b>optional, sound type system</b> and a virtual
+          machine so fast that Sun turned it into <b>Java HotSpot</b>. This edition re-builds it in Rust and runs it
+          right here in the page, with nothing to install.</p>
+        <div class="actions">
+          <a class="btn primary" href="try/">Open the environment <span class="arr">→</span></a>
+          <a class="btn ghost" href="articles/history.html">Read the story</a>
+        </div>
+      </div>
+
+      <div class="play" id="play" data-state="idle" aria-label="Live Strongtalk playground">
+        <div class="play-bar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="title">Workspace</span>
+          <span class="status" id="play-status">VM sleeping</span>
+        </div>
+        <div class="play-chips" id="play-chips" role="group" aria-label="Examples"></div>
+        <div class="play-editor">
+          <label for="play-src" class="visually-hidden" style="position:absolute;left:-9999px">Strongtalk code</label>
+          <textarea id="play-src" spellcheck="false" autocapitalize="off" autocomplete="off">(1 to: 10) collect: [:i &lt;Int&gt; | i * i]</textarea>
+        </div>
+        <div class="play-actions">
+          <button class="run" id="play-run" type="button"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>Print it</button>
+          <span class="kbd">⌘/Ctrl + Enter</span>
+          <a class="full" href="try/">Full environment →</a>
+        </div>
+        <pre class="play-out" id="play-out" aria-live="polite"><span class="m">Press “Print it”. The VM starts in your browser on first use.</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <div class="in">
+      <span><b>65</b> classes in typed Strongtalk</span>
+      <span><b>100%</b> runs in your browser</span>
+      <span><b>0</b> installs, no server</span>
+      <span><b>Rust</b> bytecode VM + type checker</span>
+    </div>
+  </div>
+
+  <section class="wrap" id="types">
+    <div class="sec-head">
+      <span class="kicker">The type system</span>
+      <h2>Add types one method at a time. <em>Remove them and nothing changes.</em></h2>
+      <p class="sub">Types are written in angle brackets and checked separately from running the program. Untyped code is
+        trusted, so a large program can be typed gradually, and the checker never alters what code does.</p>
+    </div>
+    <div class="compare">
+      <div>
+        <div class="lbl"><b>Plain Smalltalk</b><span>runs</span></div>
+<pre><span class="kw">deposit:</span> amount
+    amount &lt;= 0 ifTrue: [
+        ^self error: <span class="st">'must be positive'</span>].
+    balance := balance + amount.
+    history add: amount
+
+<span class="kw">detect:</span> aBlock
+    self do: [:each |
+        (aBlock value: each) ifTrue: [^each]].
+    ^self error: <span class="st">'not found'</span></pre>
+      </div>
+      <div>
+        <div class="lbl"><b>Strongtalk</b><span>runs the same, and type-checks</span></div>
+<pre><span class="kw">deposit:</span> amount <span class="ty">&lt;Int&gt;</span> <span class="ty">^&lt;Self&gt;</span>
+    amount &lt;= 0 ifTrue: [
+        ^self error: <span class="st">'must be positive'</span>].
+    balance := balance + amount.
+    history add: amount
+
+<span class="kw">detect:</span> aBlock <span class="ty">&lt;[E, ^Bool]&gt;</span> <span class="ty">^&lt;E&gt;</span>
+    self do: [:each <span class="ty">&lt;E&gt;</span> |
+        (aBlock value: each) ifTrue: [^each]].
+    ^self error: <span class="st">'not found'</span></pre>
+      </div>
+    </div>
+    <div class="points">
+      <div><h3><code>&lt;Int&gt;</code> Protocols, not classes</h3><p>A type names the messages an object understands, so unrelated classes that answer the same messages share a type.</p></div>
+      <div><h3><code>&lt;Self&gt;</code> Types that follow subclasses</h3><p>Self and Instance types give subclasses the right result types without redeclaring a single method.</p></div>
+      <div><h3><code>Array[E]</code> Generics and blocks</h3><p>Generic collections, union types and block types like <code style="font:13px var(--mono)">&lt;[Int, ^Bool]&gt;</code> cover real Smalltalk idioms.</p></div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker">This edition</span>
+        <h2>A complete Strongtalk, rebuilt in Rust</h2>
+        <p class="sub">The original ran only on 32-bit Windows. This one compiles the same language to bytecode and runs
+          it natively on a Mac, or as WebAssembly in any modern browser.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h6"/><path d="M17 14l3 3-3 3"/></svg></div>
+          <h3>Typed parser and compiler</h3>
+          <p>The full Strongtalk syntax, type annotations included, compiled to a compact bytecode.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg></div>
+          <h3>Bytecode interpreter</h3>
+          <p>Activations live on the heap, so recursion can go very deep. Blocks support non-local return.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M5 19L19 5"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg></div>
+          <h3>The whole numeric tower</h3>
+          <p>SmallInteger, LargeInteger, Float and Fraction arithmetic: <code>100 factorial</code> just works.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Type checker</h3>
+          <p>Check a class, a method or a do-it from the browser. Errors point at the expression that failed.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16.5" r=".6"/><path d="M10.3 3.9L2.6 17.5A2 2 0 004.3 20.5h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div>
+          <h3>ANSI exceptions</h3>
+          <p><code>on:do:</code>, <code>ensure:</code>, <code>retry</code>, <code>resume:</code>, with primitives named after the original VM's.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M9 14h6M9 17h4"/></svg></div>
+          <h3>File-in, file-out</h3>
+          <p>Strongtalk's <code>Delta define:as:</code> chunk format, so classes travel as plain source files.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="env">
+      <div>
+        <span class="kicker">The environment</span>
+        <h2>The classic Strongtalk desktop, in a tab</h2>
+        <p class="sub">A windowed, image-style environment like the original, with the VM running in a Web Worker so
+          an endless loop never freezes the page.</p>
+        <ul class="pts">
+          <li>Launcher and Transcript, multiple workspaces with Do it, Print it and Inspect it</li>
+          <li>Class hierarchy and outliner class browsers that compile methods as you save</li>
+          <li>Inspectors, debugger-style error windows and picture windows for graphics</li>
+          <li>Your changes are kept between visits and can be filed out as source</li>
+        </ul>
+        <a class="btn line" href="try/">Start Strongtalk <span class="arr">→</span></a>
+      </div>
+      <div class="desk" aria-hidden="true">
+        <div class="win w-launch">
+          <div class="tb">Strongtalk Launcher<i></i></div>
+          <div class="menu"><span>File</span><span>Browse</span><span>Tools</span><span>Help</span></div>
+          <div class="bd"><pre><span class="cm">Strongtalk 2.0 — Rust VM as WebAssembly</span>
+<span class="cm">65 classes loaded.</span>
+hello world</pre></div>
+        </div>
+        <div class="win w-hier">
+          <div class="tb">Class hierarchy<i></i></div>
+          <div class="bd"><ul>
+            <li>Object</li><li>&nbsp; Boolean</li><li>&nbsp; Collection</li><li>&nbsp;&nbsp; <span class="on">OrderedCollection</span></li><li>&nbsp;&nbsp; Set</li><li>&nbsp; Magnitude</li><li>&nbsp;&nbsp; Number</li><li>&nbsp;&nbsp;&nbsp; Integer</li>
+          </ul></div>
+        </div>
+        <div class="win w-ws">
+          <div class="tb">Workspace<i></i></div>
+          <div class="bd"><pre><span class="cm">"Select and Print it"</span>
+| squares <span class="ty">&lt;OrderedCollection[Int]&gt;</span> |
+squares := OrderedCollection new.
+1 to: 6 do: [:i <span class="ty">&lt;Int&gt;</span> | squares add: i * i].
+<span class="sel">squares inject: 0 into: [:a :b | a + b]</span> <span class="pr">91</span>
+
+<span class="sel">2 raisedTo: 64</span> <span class="pr">18446744073709551616</span></pre></div>
+        </div>
+        <div class="task"><b>Strongtalk</b><span>Launcher</span><span>Workspace</span><span>Class hierarchy</span><span class="ok">ready</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker">Lineage</span>
+        <h2>A small language with a long shadow</h2>
+        <p class="sub">The people and ideas behind Strongtalk went on to shape the runtimes most of us use every day.</p>
+      </div>
+      <div class="lineage">
+        <div class="stop"><span class="yr">1987–91</span><h3>Self</h3><p>Optimizing compilers for a pure object language at Stanford and Sun.</p></div>
+        <div class="stop key"><span class="yr">1993</span><h3>Strongtalk types</h3><p>An optional, sound type system for Smalltalk, presented at OOPSLA.</p></div>
+        <div class="stop key"><span class="yr">1994–96</span><h3>Animorphic</h3><p>A small company builds the Strongtalk system and its adaptive VM.</p></div>
+        <div class="stop"><span class="yr">1997–99</span><h3>Java HotSpot</h3><p>Sun acquires Animorphic; the VM becomes the heart of Java.</p></div>
+        <div class="stop"><span class="yr">2006 →</span><h3>Open source, V8, Dart</h3><p>Strongtalk is released; its team goes on to V8 and Dart.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="articles">
+    <div class="sec-head">
+      <span class="kicker">Read</span>
+      <h2>Four short articles</h2>
+      <p class="sub">A tour of where Strongtalk came from, how its types and VM work, and how this edition was made.</p>
+    </div>
+    <div class="cards">
+      <a class="card" href="articles/history.html">
+        <span class="num">01</span><span class="kicker">History</span>
+        <h3>From Self to HotSpot</h3>
+        <p>A small company, a research VM and a type system for Smalltalk, and where their ideas ended up.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="card" href="articles/types.html">
+        <span class="num">02</span><span class="kicker">Language</span>
+        <h3>Typing Smalltalk without breaking it</h3>
+        <p>Optional types, protocols instead of classes, generics, and a checker that never changes behaviour.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="card" href="articles/vm.html">
+        <span class="num">03</span><span class="kicker">Implementation</span>
+        <h3>Why the VM was so fast</h3>
+        <p>Tagged integers, inline caches, type feedback and adaptive optimization.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="card" href="articles/this-edition.html">
+        <span class="num">04</span><span class="kicker">This edition</span>
+        <h3>Rebuilding it in Rust</h3>
+        <p>How the original was studied and re-implemented, and what behaves exactly like it.</p>
+        <span class="more">Read →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker">Run it yourself</span>
+        <h2>On your own machine</h2>
+        <p class="sub">The source is on GitHub. Build the terminal VM or the website with Rust.</p>
+      </div>
+      <div class="getit">
+        <div class="panel">
+          <h3>Terminal workspace</h3>
+          <p>A native build with an interactive workspace, a type checker and a benchmark.</p>
+<pre class="term"><span class="p">$ </span>git clone https://github.com/Volland/strongtalk
+<span class="p">$ </span>cd strongtalk && npm run build:native
+<span class="p">$ </span>vm/target/release/strongtalk -e '100 factorial'
+<span class="p">$ </span>vm/target/release/strongtalk --typecheck</pre>
+        </div>
+        <div class="panel">
+          <h3>WebAssembly website</h3>
+          <p>Needs the <code style="font:13px var(--mono)">wasm32-unknown-unknown</code> target and wasm-bindgen 0.2.128.</p>
+<pre class="term"><span class="p">$ </span>rustup target add wasm32-unknown-unknown
+<span class="p">$ </span>cargo install wasm-bindgen-cli --version 0.2.128
+<span class="p">$ </span>npm run build      <span class="p"># → dist/</span>
+<span class="p">$ </span>npm test</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <h2>Everything is an object. Try sending it a message.</h2>
+      <p>The full environment opens in a second, with workspaces, class browsers and a type checker, all running locally in your browser.</p>
+      <div class="actions">
+        <a class="btn primary" href="try/">Start Strongtalk <span class="arr">→</span></a>
+        <a class="btn ghost" href="https://github.com/Volland/strongtalk">View source on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="in">
+      <span>Strongtalk was created by Animorphic Systems and released as open source by Sun Microsystems.
+        This site and its Rust/WebAssembly edition are an independent re-implementation.</span>
+      <span class="links"><a href="try/">Environment</a><a href="articles/this-edition.html">About this edition</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span>
+    </div>
+  </footer>
+
+  <script type="module" src="play.js"></script>
+</body>
+</html>

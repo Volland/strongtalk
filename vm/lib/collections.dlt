@@ -1,0 +1,1306 @@
+"Collections. Strongtalk collections are generic: Collection[E], Dictionary[K,V]."
+
+Delta define: #Collection as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'Object' instanceVariables: ''))) !
+(Delta mirrorFor: #Collection) group: 'collections' !
+(Delta mirrorFor: #Collection) comment: 'Groups of elements of type E. Subclasses say how to do: and add:.' !
+
+! (Delta mirrorFor: #Collection) classSide methodsFor: 'instance creation' !
+
+with: a <Object> ^<Instance>
+	^self new add: a; yourself
+!
+
+with: a <Object> with: b <Object> ^<Instance>
+	^self new add: a; add: b; yourself
+!
+
+with: a <Object> with: b <Object> with: c <Object> ^<Instance>
+	^self new add: a; add: b; add: c; yourself
+!
+
+with: a <Object> with: b <Object> with: c <Object> with: d <Object> ^<Instance>
+	^self new add: a; add: b; add: c; add: d; yourself
+!
+
+withAll: aCollection <Collection> ^<Instance>
+	^self new addAll: aCollection; yourself
+! !
+
+! (Delta mirrorFor: #Collection) methodsFor: 'enumerating' !
+
+do: aBlock <[E, ^Object]> ^<Self>
+	^self subclassResponsibility
+!
+
+do: aBlock <[E, ^Object]> separatedBy: between <[^Object]> ^<Self>
+	| first <Boolean> |
+	first := true.
+	self do: [:e <E> |
+		first ifTrue: [first := false] ifFalse: [between value].
+		aBlock value: e]
+!
+
+collect: aBlock <[E, ^Object]> ^<Collection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self do: [:e <E> | r add: (aBlock value: e)].
+	^r
+!
+
+select: aBlock <[E, ^Boolean]> ^<Collection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self do: [:e <E> | (aBlock value: e) ifTrue: [r add: e]].
+	^r
+!
+
+reject: aBlock <[E, ^Boolean]> ^<Collection>
+	^self select: [:e <E> | (aBlock value: e) not]
+!
+
+detect: aBlock <[E, ^Boolean]> ^<E>
+	^self detect: aBlock ifNone: [self error: 'no element satisfies the condition']
+!
+
+detect: aBlock <[E, ^Boolean]> ifNone: noneBlock <[^Object]> ^<Object>
+	self do: [:e <E> | (aBlock value: e) ifTrue: [^e]].
+	^noneBlock value
+!
+
+inject: initial <Object> into: aBlock <[Object, E, ^Object]> ^<Object>
+	| acc <Object> |
+	acc := initial.
+	self do: [:e <E> | acc := aBlock value: acc value: e].
+	^acc
+!
+
+anySatisfy: aBlock <[E, ^Boolean]> ^<Boolean>
+	self do: [:e <E> | (aBlock value: e) ifTrue: [^true]].
+	^false
+!
+
+allSatisfy: aBlock <[E, ^Boolean]> ^<Boolean>
+	self do: [:e <E> | (aBlock value: e) ifFalse: [^false]].
+	^true
+!
+
+noneSatisfy: aBlock <[E, ^Boolean]> ^<Boolean>
+	^(self anySatisfy: aBlock) not
+!
+
+count: aBlock <[E, ^Boolean]> ^<Int>
+	| n <Int> |
+	n := 0.
+	self do: [:e <E> | (aBlock value: e) ifTrue: [n := n + 1]].
+	^n
+!
+
+sum ^<Number>
+	^self inject: 0 into: [:a <Number> :b <Number> | a + b]
+!
+
+sum: aBlock <[E, ^Number]> ^<Number>
+	^self inject: 0 into: [:a <Number> :b <E> | a + (aBlock value: b)]
+!
+
+max ^<Object>
+	^self inject: self anyOne into: [:a <Magnitude> :b <Magnitude> | a max: b]
+!
+
+min ^<Object>
+	^self inject: self anyOne into: [:a <Magnitude> :b <Magnitude> | a min: b]
+!
+
+average ^<Number>
+	^self sum / self size
+!
+
+anyOne ^<E>
+	self do: [:e <E> | ^e].
+	^self error: 'the collection is empty'
+! !
+
+! (Delta mirrorFor: #Collection) methodsFor: 'accessing' !
+
+size ^<Int>
+	| n <Int> |
+	n := 0.
+	self do: [:e <E> | n := n + 1].
+	^n
+! !
+
+! (Delta mirrorFor: #Collection) methodsFor: 'adding and removing' !
+
+add: element <E> ^<E>
+	^self subclassResponsibility
+!
+
+addAll: aCollection <Collection> ^<Collection>
+	aCollection do: [:e <E> | self add: e].
+	^aCollection
+!
+
+remove: element <E> ^<E>
+	^self remove: element ifAbsent: [self error: element printString, ' is not in the collection']
+!
+
+remove: element <E> ifAbsent: aBlock <[^Object]> ^<Object>
+	^self subclassResponsibility
+!
+
+removeAll: aCollection <Collection> ^<Collection>
+	aCollection do: [:e <E> | self remove: e].
+	^aCollection
+! !
+
+! (Delta mirrorFor: #Collection) methodsFor: 'testing' !
+
+isEmpty ^<Boolean>
+	^self size = 0
+!
+
+notEmpty ^<Boolean>
+	^self isEmpty not
+!
+
+isEmptyOrNil ^<Boolean>
+	^self isEmpty
+!
+
+ifEmpty: aBlock <[^Object]> ^<Object>
+	^self isEmpty ifTrue: [aBlock value] ifFalse: [self]
+!
+
+ifNotEmpty: aBlock <Object> ^<Object>
+	self isEmpty ifTrue: [^self].
+	^aBlock numArgs = 0 ifTrue: [aBlock value] ifFalse: [aBlock value: self]
+!
+
+includes: element <Object> ^<Boolean>
+	^self anySatisfy: [:e <E> | e = element]
+!
+
+occurrencesOf: element <Object> ^<Int>
+	^self count: [:e <E> | e = element]
+!
+
+isCollection ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Collection) methodsFor: 'converting' !
+
+asArray ^<Array>
+	| a <Array> i <Int> |
+	a := Array new: self size.
+	i := 0.
+	self do: [:e <E> | a at: (i := i + 1) put: e].
+	^a
+!
+
+asOrderedCollection ^<OrderedCollection>
+	^OrderedCollection withAll: self
+!
+
+asSet ^<Set>
+	^Set withAll: self
+!
+
+asBag ^<Bag>
+	^Bag withAll: self
+!
+
+asSortedCollection ^<SortedCollection>
+	^SortedCollection withAll: self
+!
+
+asSortedCollection: sortBlock <[E, E, ^Boolean]> ^<SortedCollection>
+	^(SortedCollection sortBlock: sortBlock) addAll: self; yourself
+!
+
+sorted ^<Array>
+	^self asArray sort
+!
+
+sorted: sortBlock <[E, E, ^Boolean]> ^<Array>
+	^self asArray sort: sortBlock
+! !
+
+! (Delta mirrorFor: #Collection) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	| n <String> count <Int> |
+	n := self class name.
+	aStream nextPutAll: ((n at: 1) isVowel ifTrue: ['an '] ifFalse: ['a ']); nextPutAll: n; nextPut: $(.
+	count := 0.
+	self do: [:e <E> |
+		count := count + 1.
+		count > 100 ifTrue: [aStream nextPutAll: '...)'. ^self].
+		e printOn: aStream]
+		separatedBy: [aStream space].
+	aStream nextPut: $)
+! !
+
+Delta define: #SequenceableCollection as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'Collection[E]' instanceVariables: ''))) !
+(Delta mirrorFor: #SequenceableCollection) group: 'collections' !
+(Delta mirrorFor: #SequenceableCollection) comment: 'Collections whose elements are numbered from 1 to size.' !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'accessing' !
+
+first ^<E>
+	self isEmpty ifTrue: [^self emptyError].
+	^self at: 1
+!
+
+last ^<E>
+	self isEmpty ifTrue: [^self emptyError].
+	^self at: self size
+!
+
+first: n <Int> ^<SequenceableCollection>
+	^self copyFrom: 1 to: n
+!
+
+last: n <Int> ^<SequenceableCollection>
+	^self copyFrom: self size - n + 1 to: self size
+!
+
+allButFirst ^<SequenceableCollection>
+	^self copyFrom: 2 to: self size
+!
+
+allButLast ^<SequenceableCollection>
+	^self copyFrom: 1 to: self size - 1
+!
+
+second ^<E>
+	^self at: 2
+!
+
+third ^<E>
+	^self at: 3
+!
+
+atRandom ^<E>
+	^self at: self size atRandom
+!
+
+indexOf: element <Object> ^<Int>
+	1 to: self size do: [:i <Int> | (self at: i) = element ifTrue: [^i]].
+	^0
+!
+
+emptyError ^<Object>
+	^self error: 'the collection is empty'
+!
+
+swap: i <Int> with: j <Int> ^<Self>
+	| t <E> |
+	t := self at: i.
+	self at: i put: (self at: j).
+	self at: j put: t
+! !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'enumerating' !
+
+do: aBlock <[E, ^Object]> ^<Self>
+	1 to: self size do: [:i <Int> | aBlock value: (self at: i)]
+!
+
+doWithIndex: aBlock <[E, Int, ^Object]> ^<Self>
+	1 to: self size do: [:i <Int> | aBlock value: (self at: i) value: i]
+!
+
+withIndexDo: aBlock <[E, Int, ^Object]> ^<Self>
+	1 to: self size do: [:i <Int> | aBlock value: (self at: i) value: i]
+!
+
+keysAndValuesDo: aBlock <[Int, E, ^Object]> ^<Self>
+	1 to: self size do: [:i <Int> | aBlock value: i value: (self at: i)]
+!
+
+reverseDo: aBlock <[E, ^Object]> ^<Self>
+	self size to: 1 by: -1 do: [:i <Int> | aBlock value: (self at: i)]
+!
+
+from: start <Int> to: stop <Int> do: aBlock <[E, ^Object]> ^<Self>
+	start to: stop do: [:i <Int> | aBlock value: (self at: i)]
+!
+
+with: other <SequenceableCollection> do: aBlock <[E, Object, ^Object]> ^<Self>
+	other size = self size ifFalse: [^self error: 'the collections have different sizes'].
+	1 to: self size do: [:i <Int> | aBlock value: (self at: i) value: (other at: i)]
+!
+
+with: other <SequenceableCollection> collect: aBlock <[E, Object, ^Object]> ^<Array>
+	| r <Array> |
+	other size = self size ifFalse: [^self error: 'the collections have different sizes'].
+	r := Array new: self size.
+	1 to: self size do: [:i <Int> | r at: i put: (aBlock value: (self at: i) value: (other at: i))].
+	^r
+!
+
+collect: aBlock <[E, ^Object]> ^<Array>
+	| r <Array> |
+	r := Array new: self size.
+	1 to: self size do: [:i <Int> | r at: i put: (aBlock value: (self at: i))].
+	^r
+!
+
+collectWithIndex: aBlock <[E, Int, ^Object]> ^<Array>
+	| r <Array> |
+	r := Array new: self size.
+	1 to: self size do: [:i <Int> | r at: i put: (aBlock value: (self at: i) value: i)].
+	^r
+!
+
+select: aBlock <[E, ^Boolean]> ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self do: [:e <E> | (aBlock value: e) ifTrue: [r add: e]].
+	^self species withAll: r
+!
+
+reject: aBlock <[E, ^Boolean]> ^<SequenceableCollection>
+	^self select: [:e <E> | (aBlock value: e) not]
+!
+
+reversed ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self reverseDo: [:e <E> | r add: e].
+	^self species withAll: r
+!
+
+reverse ^<SequenceableCollection>
+	^self reversed
+! !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'copying' !
+
+copyFrom: start <Int> to: stop <Int> ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	start to: stop do: [:i <Int> | r add: (self at: i)].
+	^self species withAll: r
+!
+
+copyWith: element <Object> ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection withAll: self.
+	r add: element.
+	^self species withAll: r
+!
+
+copyWithout: element <Object> ^<SequenceableCollection>
+	^self reject: [:e <E> | e = element]
+!
+
+, other <SequenceableCollection> ^<SequenceableCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection withAll: self.
+	r addAll: other.
+	^self species withAll: r
+!
+
+species ^<SequenceableCollection class>
+	^Array
+! !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'comparing' !
+
+= other <Object> ^<Boolean>
+	self == other ifTrue: [^true].
+	self class == other class ifFalse: [^false].
+	self size = other size ifFalse: [^false].
+	1 to: self size do: [:i <Int> | (self at: i) = (other at: i) ifFalse: [^false]].
+	^true
+!
+
+hash ^<Int>
+	| h <Int> |
+	h := self size.
+	1 to: (self size min: 8) do: [:i <Int> | h := (h * 31 + (self at: i) hash) bitAnd: 16r3FFFFFF].
+	^h
+! !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'sorting' !
+
+sort ^<Self>
+	^self sort: [:a <Magnitude> :b <Magnitude> | a <= b]
+!
+
+sort: sortBlock <[E, E, ^Boolean]> ^<Self>
+	"Sorts the receiver in place (quicksort)."
+	self quickSortFrom: 1 to: self size by: sortBlock
+!
+
+quickSortFrom: lo <Int> to: hi <Int> by: sortBlock <[E, E, ^Boolean]> ^<Self>
+	| i <Int> j <Int> pivot <E> |
+	lo < hi ifFalse: [^self].
+	pivot := self at: (lo + hi) // 2.
+	i := lo.
+	j := hi.
+	[i <= j] whileTrue: [
+		[(sortBlock value: pivot value: (self at: i)) not] whileTrue: [i := i + 1].
+		[(sortBlock value: (self at: j) value: pivot) not] whileTrue: [j := j - 1].
+		i <= j ifTrue: [self swap: i with: j. i := i + 1. j := j - 1]].
+	self quickSortFrom: lo to: j by: sortBlock.
+	self quickSortFrom: i to: hi by: sortBlock
+! !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'streams' !
+
+readStream ^<ReadStream>
+	^ReadStream on: self
+! !
+
+! (Delta mirrorFor: #SequenceableCollection) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	super printOn: aStream
+! !
+
+Delta define: #ArrayedCollection as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'SequenceableCollection[E]' instanceVariables: ''))) !
+(Delta mirrorFor: #ArrayedCollection) group: 'collections' !
+(Delta mirrorFor: #ArrayedCollection) comment: 'Fixed-size sequences stored in the object itself: Array, String, Symbol, ByteArray.' !
+
+! (Delta mirrorFor: #ArrayedCollection) classSide methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^self new: 0
+!
+
+new: n <Int> withAll: value <Object> ^<Instance>
+	| a <Instance> |
+	a := self new: n.
+	1 to: n do: [:i <Int> | a at: i put: value].
+	^a
+!
+
+with: a <Object> ^<Instance>
+	^(self new: 1) at: 1 put: a; yourself
+!
+
+with: a <Object> with: b <Object> ^<Instance>
+	^(self new: 2) at: 1 put: a; at: 2 put: b; yourself
+!
+
+with: a <Object> with: b <Object> with: c <Object> ^<Instance>
+	^(self new: 3) at: 1 put: a; at: 2 put: b; at: 3 put: c; yourself
+!
+
+with: a <Object> with: b <Object> with: c <Object> with: d <Object> ^<Instance>
+	^(self new: 4) at: 1 put: a; at: 2 put: b; at: 3 put: c; at: 4 put: d; yourself
+!
+
+withAll: aCollection <Collection> ^<Instance>
+	| a <Instance> i <Int> |
+	a := self new: aCollection size.
+	i := 0.
+	aCollection do: [:e <Object> | a at: (i := i + 1) put: e].
+	^a
+! !
+
+! (Delta mirrorFor: #ArrayedCollection) methodsFor: 'accessing' !
+
+size ^<Int>
+	^{{self primitiveSizeIfFail: [:err <Symbol> | 0]}}
+!
+
+atAllPut: value <E> ^<Self>
+	1 to: self size do: [:i <Int> | self at: i put: value]
+!
+
+replaceFrom: start <Int> to: stop <Int> with: source <SequenceableCollection> startingAt: srcStart <Int> ^<Self>
+	{{self primitiveIndexedObjectReplaceFrom: start to: stop with: source startingAt: srcStart
+		ifFail: [:err <Symbol> | self error: 'replaceFrom:to:with:startingAt: failed (', err, ')']}}
+! !
+
+! (Delta mirrorFor: #ArrayedCollection) methodsFor: 'copying' !
+
+copyFrom: start <Int> to: stop <Int> ^<Self>
+	^{{self primitiveCopyFrom: start to: stop ifFail: [:err <Symbol> | self indexError: start]}}
+!
+
+, other <SequenceableCollection> ^<Self>
+	^{{self primitiveStringConcatenate: other ifFail: [:err <Symbol> | super , other]}}
+!
+
+copyWith: element <Object> ^<Self>
+	| r <Self> |
+	r := {{self primitiveCopyWithSize: self size + 1 ifFail: [:err <Symbol> | self error: 'copy failed']}}.
+	r at: r size put: element.
+	^r
+!
+
+species ^<Behavior>
+	^self class
+! !
+
+Delta define: #Array as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'ArrayedCollection[E]' instanceVariables: ''))) !
+(Delta mirrorFor: #Array) group: 'collections' !
+(Delta mirrorFor: #Array) comment: 'Fixed-size sequences of any objects. Literal arrays are written #(1 2 3); computed ones {a. b. c}.' !
+
+! (Delta mirrorFor: #Array) methodsFor: 'testing' !
+
+isArray ^<Boolean>
+	^true
+! !
+
+! (Delta mirrorFor: #Array) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: '#('.
+	self do: [:e <E> | e printOn: aStream] separatedBy: [aStream space].
+	aStream nextPut: $)
+! !
+
+Delta define: #ByteArray as: (
+(Class subclassOf: 'ArrayedCollection[SmallInteger]' instanceVariables: '')) !
+(Delta mirrorFor: #ByteArray) group: 'collections' !
+(Delta mirrorFor: #ByteArray) comment: 'Arrays of bytes (integers 0-255), written #[1 2 3].' !
+
+! (Delta mirrorFor: #ByteArray) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: '#['.
+	self do: [:e <SmallInteger> | e printOn: aStream] separatedBy: [aStream space].
+	aStream nextPut: $]
+! !
+
+Delta define: #Interval as: (
+(Class subclassOf: 'SequenceableCollection[Number]' instanceVariables: 'start <Number> stop <Number> step <Number>')) !
+(Delta mirrorFor: #Interval) group: 'collections' !
+(Delta mirrorFor: #Interval) comment: 'Arithmetic progressions such as (1 to: 10 by: 2). The elements are computed, not stored.' !
+
+! (Delta mirrorFor: #Interval) classSide methodsFor: 'instance creation' !
+
+from: a <Number> to: b <Number> ^<Instance>
+	^self from: a to: b by: 1
+!
+
+from: a <Number> to: b <Number> by: s <Number> ^<Instance>
+	^self basicNew setFrom: a to: b by: s
+! !
+
+! (Delta mirrorFor: #Interval) methodsFor: 'accessing' !
+
+setFrom: a <Number> to: b <Number> by: s <Number> ^<Self>
+	s = 0 ifTrue: [^self error: 'the step of an interval cannot be zero'].
+	start := a.
+	stop := b.
+	step := s
+!
+
+size ^<Int>
+	step > 0
+		ifTrue: [stop < start ifTrue: [^0]]
+		ifFalse: [start < stop ifTrue: [^0]].
+	^((stop - start) // step) + 1
+!
+
+at: i <Int> ^<Number>
+	(i >= 1 and: [i <= self size]) ifFalse: [^self indexError: i].
+	^start + (step * (i - 1))
+!
+
+at: i <Int> put: v <Object> ^<Object>
+	^self shouldNotImplement
+!
+
+first ^<Number>
+	^start
+!
+
+last ^<Number>
+	^stop - ((stop - start) \\ step)
+!
+
+increment ^<Number>
+	^step
+!
+
+do: aBlock <[Number, ^Object]> ^<Self>
+	| i <Number> |
+	i := start.
+	step > 0
+		ifTrue: [[i <= stop] whileTrue: [aBlock value: i. i := i + step]]
+		ifFalse: [[i >= stop] whileTrue: [aBlock value: i. i := i + step]]
+!
+
+species ^<Behavior>
+	^Array
+! !
+
+! (Delta mirrorFor: #Interval) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPut: $(; print: start; nextPutAll: ' to: '; print: stop.
+	step = 1 ifFalse: [aStream nextPutAll: ' by: '; print: step].
+	aStream nextPut: $)
+! !
+
+Delta define: #OrderedCollection as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'SequenceableCollection[E]' instanceVariables: 'array <Array[E]> firstIndex <Int> lastIndex <Int>'))) !
+(Delta mirrorFor: #OrderedCollection) group: 'collections' !
+(Delta mirrorFor: #OrderedCollection) comment: 'Growable sequences: add: at the end, addFirst: at the front, removeFirst, removeLast.' !
+
+! (Delta mirrorFor: #OrderedCollection) classSide methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^self new: 8
+!
+
+new: capacity <Int> ^<Instance>
+	^self basicNew initCapacity: capacity
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'private' !
+
+initCapacity: n <Int> ^<Self>
+	array := Array new: (n max: 4).
+	firstIndex := (array size // 3) max: 1.
+	lastIndex := firstIndex - 1
+!
+
+growAtEnd ^<Self>
+	| newArray <Array[E]> |
+	newArray := Array new: array size * 2 + 4.
+	newArray replaceFrom: firstIndex to: lastIndex with: array startingAt: firstIndex.
+	array := newArray
+!
+
+growAtFront ^<Self>
+	| newArray <Array[E]> shift <Int> |
+	shift := array size + 4.
+	newArray := Array new: array size + shift.
+	newArray replaceFrom: firstIndex + shift to: lastIndex + shift with: array startingAt: firstIndex.
+	firstIndex := firstIndex + shift.
+	lastIndex := lastIndex + shift.
+	array := newArray
+!
+
+postCopy ^<Self>
+	array := array copy
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'accessing' !
+
+size ^<Int>
+	^lastIndex - firstIndex + 1
+!
+
+at: i <Int> ^<E>
+	(i < 1 or: [i > (lastIndex - firstIndex + 1)]) ifTrue: [^self indexError: i].
+	^array at: firstIndex + i - 1
+!
+
+at: i <Int> put: value <E> ^<E>
+	(i < 1 or: [i > (lastIndex - firstIndex + 1)]) ifTrue: [^self indexError: i].
+	^array at: firstIndex + i - 1 put: value
+!
+
+capacity ^<Int>
+	^array size
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'adding' !
+
+add: element <E> ^<E>
+	^self addLast: element
+!
+
+addLast: element <E> ^<E>
+	lastIndex = array size ifTrue: [self growAtEnd].
+	lastIndex := lastIndex + 1.
+	^array at: lastIndex put: element
+!
+
+addFirst: element <E> ^<E>
+	firstIndex = 1 ifTrue: [self growAtFront].
+	firstIndex := firstIndex - 1.
+	^array at: firstIndex put: element
+!
+
+addAll: aCollection <Collection> ^<Collection>
+	aCollection do: [:e <E> | self add: e].
+	^aCollection
+!
+
+add: element <E> beforeIndex: index <Int> ^<E>
+	| i <Int> |
+	(index < 1 or: [index > (self size + 1)]) ifTrue: [^self indexError: index].
+	self addLast: element.
+	i := self size.
+	[i > index] whileTrue: [self at: i put: (self at: i - 1). i := i - 1].
+	^self at: index put: element
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'removing' !
+
+removeFirst ^<E>
+	| e <E> |
+	self isEmpty ifTrue: [^self emptyError].
+	e := array at: firstIndex.
+	array at: firstIndex put: nil.
+	firstIndex := firstIndex + 1.
+	^e
+!
+
+removeLast ^<E>
+	| e <E> |
+	self isEmpty ifTrue: [^self emptyError].
+	e := array at: lastIndex.
+	array at: lastIndex put: nil.
+	lastIndex := lastIndex - 1.
+	^e
+!
+
+removeFirst: n <Int> ^<Array>
+	^(1 to: n) collect: [:i <Int> | self removeFirst]
+!
+
+removeLast: n <Int> ^<SequenceableCollection>
+	^((1 to: n) collect: [:i <Int> | self removeLast]) reversed
+!
+
+removeIndex: index <Int> ^<E>
+	| e <E> |
+	e := self at: index.
+	firstIndex + index - 1 to: lastIndex - 1 do: [:i <Int> | array at: i put: (array at: i + 1)].
+	array at: lastIndex put: nil.
+	lastIndex := lastIndex - 1.
+	^e
+!
+
+remove: element <E> ifAbsent: aBlock <[^Object]> ^<Object>
+	| i <Int> |
+	i := self indexOf: element.
+	i = 0 ifTrue: [^aBlock value].
+	^self removeIndex: i
+!
+
+removeAll ^<Self>
+	self initCapacity: 8
+!
+
+removeAllSuchThat: aBlock <[E, ^Boolean]> ^<Self>
+	| keep <Collection> |
+	keep := self reject: aBlock.
+	self removeAll.
+	self addAll: keep
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'enumerating' !
+
+do: aBlock <[E, ^Object]> ^<Self>
+	firstIndex to: lastIndex do: [:i <Int> | aBlock value: (array at: i)]
+!
+
+collect: aBlock <[E, ^Object]> ^<OrderedCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new: self size.
+	firstIndex to: lastIndex do: [:i <Int> | r addLast: (aBlock value: (array at: i))].
+	^r
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'copying' !
+
+copyFrom: start <Int> to: stop <Int> ^<OrderedCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new: stop - start + 1.
+	start to: stop do: [:i <Int> | r addLast: (self at: i)].
+	^r
+!
+
+species ^<Behavior>
+	^OrderedCollection
+! !
+
+! (Delta mirrorFor: #OrderedCollection) methodsFor: 'converting' !
+
+asOrderedCollection ^<OrderedCollection>
+	^self copy
+! !
+
+Delta define: #SortedCollection as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'OrderedCollection[E]' instanceVariables: 'sortBlock <[E, E, ^Boolean]>'))) !
+(Delta mirrorFor: #SortedCollection) group: 'collections' !
+(Delta mirrorFor: #SortedCollection) comment: 'An OrderedCollection that keeps its elements sorted by its sortBlock (smallest first by default).' !
+
+! (Delta mirrorFor: #SortedCollection) classSide methodsFor: 'instance creation' !
+
+sortBlock: aBlock <[Object, Object, ^Boolean]> ^<Instance>
+	^self new setSortBlock: aBlock
+! !
+
+! (Delta mirrorFor: #SortedCollection) methodsFor: 'accessing' !
+
+setSortBlock: aBlock <[E, E, ^Boolean]> ^<Self>
+	sortBlock := aBlock
+!
+
+sortBlock ^<[E, E, ^Boolean]>
+	sortBlock isNil ifTrue: [sortBlock := [:a <Magnitude> :b <Magnitude> | a <= b]].
+	^sortBlock
+!
+
+add: element <E> ^<E>
+	| i <Int> blk <[E, E, ^Boolean]> |
+	blk := self sortBlock.
+	self addLast: element.
+	i := self size.
+	[i > 1 and: [(blk value: (self at: i - 1) value: element) not]] whileTrue: [
+		self at: i put: (self at: i - 1).
+		i := i - 1].
+	self at: i put: element.
+	^element
+!
+
+addFirst: element <E> ^<E>
+	^self shouldNotImplement
+!
+
+median ^<E>
+	^self at: self size + 1 // 2
+!
+
+collect: aBlock <[E, ^Object]> ^<OrderedCollection>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self do: [:e <E> | r add: (aBlock value: e)].
+	^r
+!
+
+species ^<Behavior>
+	^OrderedCollection
+! !
+
+Delta define: #Set as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'Collection[E]' instanceVariables: 'tally <Int> array <Array>'))) !
+(Delta mirrorFor: #Set) group: 'collections' !
+(Delta mirrorFor: #Set) comment: 'Unordered collections without duplicates, found by hash and =.' !
+
+! (Delta mirrorFor: #Set) classSide methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^self new: 16
+!
+
+new: n <Int> ^<Instance>
+	^self basicNew initCapacity: n
+! !
+
+! (Delta mirrorFor: #Set) methodsFor: 'private' !
+
+initCapacity: n <Int> ^<Self>
+	array := Array new: (n max: 8).
+	tally := 0
+!
+
+findIndex: element <Object> ^<Int>
+	| n <Int> i <Int> e <Object> |
+	n := array size.
+	i := (element hash \\ n) + 1.
+	[(e := array at: i) isNil or: [e = element]] whileFalse: [i := i \\ n + 1].
+	^i
+!
+
+grow ^<Self>
+	| old <Array> |
+	old := array.
+	array := Array new: old size * 2.
+	tally := 0.
+	old do: [:e <Object> | e notNil ifTrue: [self add: e]]
+!
+
+rehash ^<Self>
+	| old <Array> |
+	old := array.
+	array := Array new: old size.
+	tally := 0.
+	old do: [:e <Object> | e notNil ifTrue: [self add: e]]
+!
+
+postCopy ^<Self>
+	array := array copy
+! !
+
+! (Delta mirrorFor: #Set) methodsFor: 'accessing' !
+
+size ^<Int>
+	^tally
+!
+
+add: element <E> ^<E>
+	| i <Int> |
+	element isNil ifTrue: [^element].
+	i := self findIndex: element.
+	(array at: i) isNil ifTrue: [
+		array at: i put: element.
+		tally := tally + 1.
+		tally * 4 > (array size * 3) ifTrue: [self grow]].
+	^element
+!
+
+remove: element <E> ifAbsent: aBlock <[^Object]> ^<Object>
+	| i <Int> |
+	i := self findIndex: element.
+	(array at: i) isNil ifTrue: [^aBlock value].
+	array at: i put: nil.
+	tally := tally - 1.
+	self rehash.
+	^element
+!
+
+includes: element <Object> ^<Boolean>
+	element isNil ifTrue: [^false].
+	^(array at: (self findIndex: element)) notNil
+!
+
+do: aBlock <[E, ^Object]> ^<Self>
+	array do: [:e <Object> | e notNil ifTrue: [aBlock value: e]]
+!
+
+collect: aBlock <[E, ^Object]> ^<Set>
+	| r <Set> |
+	r := Set new.
+	self do: [:e <E> | r add: (aBlock value: e)].
+	^r
+!
+
+select: aBlock <[E, ^Boolean]> ^<Set>
+	| r <Set> |
+	r := Set new.
+	self do: [:e <E> | (aBlock value: e) ifTrue: [r add: e]].
+	^r
+! !
+
+Delta define: #Bag as: (
+Generic forAll: 'E' body: (
+(Class subclassOf: 'Collection[E]' instanceVariables: 'counts <Dictionary>'))) !
+(Delta mirrorFor: #Bag) group: 'collections' !
+(Delta mirrorFor: #Bag) comment: 'Unordered collections that remember how many times each element was added.' !
+
+! (Delta mirrorFor: #Bag) classSide methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^self basicNew setCounts
+! !
+
+! (Delta mirrorFor: #Bag) methodsFor: 'accessing' !
+
+setCounts ^<Self>
+	counts := Dictionary new
+!
+
+add: element <E> ^<E>
+	^self add: element withOccurrences: 1
+!
+
+add: element <E> withOccurrences: n <Int> ^<E>
+	counts at: element put: (counts at: element ifAbsent: [0]) + n.
+	^element
+!
+
+occurrencesOf: element <Object> ^<Int>
+	^counts at: element ifAbsent: [0]
+!
+
+remove: element <E> ifAbsent: aBlock <[^Object]> ^<Object>
+	| n <Int> |
+	n := counts at: element ifAbsent: [^aBlock value].
+	n = 1 ifTrue: [counts removeKey: element] ifFalse: [counts at: element put: n - 1].
+	^element
+!
+
+size ^<Int>
+	^counts inject: 0 into: [:a <Int> :b <Int> | a + b]
+!
+
+do: aBlock <[E, ^Object]> ^<Self>
+	counts keysAndValuesDo: [:k <E> :n <Int> | n timesRepeat: [aBlock value: k]]
+!
+
+asSet ^<Set>
+	^counts keys asSet
+!
+
+sortedCounts ^<SortedCollection>
+	^(counts associations collect: [:a <Association> | a value -> a key]) asSortedCollection: [:x <Association> :y <Association> | x key >= y key]
+! !
+
+Delta define: #Association as: (
+Generic forAll: 'K, V' body: (
+(Class subclassOf: 'Object' instanceVariables: 'key <K> value <V>'))) !
+(Delta mirrorFor: #Association) group: 'collections' !
+(Delta mirrorFor: #Association) comment: 'A key and a value, made with key -> value.' !
+
+! (Delta mirrorFor: #Association) classSide methodsFor: 'instance creation' !
+
+key: k <Object> value: v <Object> ^<Instance>
+	^self new key: k value: v
+! !
+
+! (Delta mirrorFor: #Association) methodsFor: 'accessing' !
+
+key ^<K>
+	^key
+!
+
+value ^<V>
+	^value
+!
+
+key: k <K> ^<Self>
+	key := k
+!
+
+value: v <V> ^<Self>
+	value := v
+!
+
+key: k <K> value: v <V> ^<Self>
+	key := k.
+	value := v
+! !
+
+! (Delta mirrorFor: #Association) methodsFor: 'comparing' !
+
+= other <Object> ^<Boolean>
+	^(other isKindOf: Association) and: [key = other key and: [value = other value]]
+!
+
+hash ^<Int>
+	^key hash
+! !
+
+! (Delta mirrorFor: #Association) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream print: key; nextPutAll: '->'; print: value
+! !
+
+Delta define: #Dictionary as: (
+Generic forAll: 'K, V' body: (
+(Class subclassOf: 'Collection[V]' instanceVariables: 'tally <Int> array <Array>'))) !
+(Delta mirrorFor: #Dictionary) group: 'collections' !
+(Delta mirrorFor: #Dictionary) comment: 'Tables from keys to values, found by hash and =.' !
+
+! (Delta mirrorFor: #Dictionary) classSide methodsFor: 'instance creation' !
+
+new ^<Instance>
+	^self new: 16
+!
+
+new: n <Int> ^<Instance>
+	^self basicNew initCapacity: n
+! !
+
+! (Delta mirrorFor: #Dictionary) methodsFor: 'private' !
+
+initCapacity: n <Int> ^<Self>
+	array := Array new: (n max: 8).
+	tally := 0
+!
+
+findIndex: key <Object> ^<Int>
+	| n <Int> i <Int> a <Association> |
+	n := array size.
+	i := (key hash \\ n) + 1.
+	[(a := array at: i) isNil or: [a key = key]] whileFalse: [i := i \\ n + 1].
+	^i
+!
+
+grow ^<Self>
+	| old <Array> |
+	old := array.
+	array := Array new: old size * 2.
+	tally := 0.
+	old do: [:a <Association> | a notNil ifTrue: [self at: a key put: a value]]
+!
+
+rehash ^<Self>
+	| old <Array> |
+	old := array.
+	array := Array new: old size.
+	tally := 0.
+	old do: [:a <Association> | a notNil ifTrue: [self at: a key put: a value]]
+!
+
+postCopy ^<Self>
+	array := array collect: [:a <Association> | a isNil ifTrue: [nil] ifFalse: [a copy]]
+!
+
+keyNotFound: key <Object> ^<Object>
+	^KeyNotFound new signal: 'key not found: ', key printString
+! !
+
+! (Delta mirrorFor: #Dictionary) methodsFor: 'accessing' !
+
+size ^<Int>
+	^tally
+!
+
+at: key <K> ^<V>
+	^self at: key ifAbsent: [self keyNotFound: key]
+!
+
+at: key <K> ifAbsent: aBlock <[^Object]> ^<Object>
+	| a <Association> |
+	a := array at: (self findIndex: key).
+	^a isNil ifTrue: [aBlock value] ifFalse: [a value]
+!
+
+at: key <K> ifAbsentPut: aBlock <[^V]> ^<V>
+	^self at: key ifAbsent: [self at: key put: aBlock value]
+!
+
+at: key <K> ifPresent: aBlock <[V, ^Object]> ^<Object>
+	| a <Association> |
+	a := array at: (self findIndex: key).
+	^a isNil ifTrue: [nil] ifFalse: [aBlock value: a value]
+!
+
+at: key <K> put: value <V> ^<V>
+	| i <Int> a <Association> |
+	i := self findIndex: key.
+	a := array at: i.
+	a isNil
+		ifTrue: [
+			array at: i put: (Association key: key value: value).
+			tally := tally + 1.
+			tally * 4 > (array size * 3) ifTrue: [self grow]]
+		ifFalse: [a value: value].
+	^value
+!
+
+add: anAssociation <Association> ^<Association>
+	self at: anAssociation key put: anAssociation value.
+	^anAssociation
+!
+
+removeKey: key <K> ^<V>
+	^self removeKey: key ifAbsent: [self keyNotFound: key]
+!
+
+removeKey: key <K> ifAbsent: aBlock <[^Object]> ^<Object>
+	| i <Int> a <Association> |
+	i := self findIndex: key.
+	a := array at: i.
+	a isNil ifTrue: [^aBlock value].
+	array at: i put: nil.
+	tally := tally - 1.
+	self rehash.
+	^a value
+!
+
+remove: value <V> ifAbsent: aBlock <[^Object]> ^<Object>
+	^self shouldNotImplement
+!
+
+keys ^<Array>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self keysDo: [:k <K> | r add: k].
+	^r asArray
+!
+
+values ^<Array>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self do: [:v <V> | r add: v].
+	^r asArray
+!
+
+associations ^<Array>
+	| r <OrderedCollection> |
+	r := OrderedCollection new.
+	self associationsDo: [:a <Association> | r add: a].
+	^r asArray
+!
+
+keyAtValue: value <Object> ^<Object>
+	self associationsDo: [:a <Association> | a value = value ifTrue: [^a key]].
+	^nil
+!
+
+includesKey: key <Object> ^<Boolean>
+	^(array at: (self findIndex: key)) notNil
+!
+
+includes: value <Object> ^<Boolean>
+	self do: [:v <V> | v = value ifTrue: [^true]].
+	^false
+! !
+
+! (Delta mirrorFor: #Dictionary) methodsFor: 'enumerating' !
+
+associationsDo: aBlock <[Association, ^Object]> ^<Self>
+	array do: [:a <Association> | a notNil ifTrue: [aBlock value: a]]
+!
+
+keysAndValuesDo: aBlock <[K, V, ^Object]> ^<Self>
+	array do: [:a <Association> | a notNil ifTrue: [aBlock value: a key value: a value]]
+!
+
+keysDo: aBlock <[K, ^Object]> ^<Self>
+	array do: [:a <Association> | a notNil ifTrue: [aBlock value: a key]]
+!
+
+do: aBlock <[V, ^Object]> ^<Self>
+	array do: [:a <Association> | a notNil ifTrue: [aBlock value: a value]]
+!
+
+collect: aBlock <[V, ^Object]> ^<Bag>
+	| r <Bag> |
+	r := Bag new.
+	self do: [:v <V> | r add: (aBlock value: v)].
+	^r
+!
+
+select: aBlock <[V, ^Boolean]> ^<Dictionary>
+	| r <Dictionary> |
+	r := Dictionary new.
+	self keysAndValuesDo: [:k <K> :v <V> | (aBlock value: v) ifTrue: [r at: k put: v]].
+	^r
+!
+
+keysSortedSafely ^<Array>
+	^self keys sort: [:a <Object> :b <Object> | a printString <= b printString]
+! !
+
+! (Delta mirrorFor: #Dictionary) methodsFor: 'printing' !
+
+printOn: aStream <WriteStream>
+	aStream nextPutAll: 'a '; nextPutAll: self class name; nextPut: $(.
+	self associations do: [:a <Association> | a printOn: aStream] separatedBy: [aStream space].
+	aStream nextPut: $)
+! !
+
+Delta define: #IdentityDictionary as: (
+Generic forAll: 'K, V' body: (
+(Class subclassOf: 'Dictionary[K,V]' instanceVariables: ''))) !
+(Delta mirrorFor: #IdentityDictionary) group: 'collections' !
+
+! (Delta mirrorFor: #IdentityDictionary) methodsFor: 'private' !
+
+findIndex: key <Object> ^<Int>
+	| n <Int> i <Int> a <Association> |
+	n := array size.
+	i := (key identityHash \\ n) + 1.
+	[(a := array at: i) isNil or: [a key == key]] whileFalse: [i := i \\ n + 1].
+	^i
+! !
