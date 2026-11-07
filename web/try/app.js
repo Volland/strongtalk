@@ -2,6 +2,8 @@
 // class browsers, inspectors, error windows and picture windows, all talking to the Rust VM
 // running in a Web Worker.
 
+import { attachHighlighter, highlightTranslation, bindFolds } from '../highlight.js';
+
 const CHANGES_KEY = 'strongtalk.changes.v1';
 const desktop = document.getElementById('desktop');
 const tasksEl = document.getElementById('tasks');
@@ -279,6 +281,8 @@ function openLauncher() {
     ['Tools', [
       ['New workspace', () => openWorkspace()],
       ['Type-check all classes', typecheckAll],
+      ['Translate a class to TypeScript…', () => askText('Translate to TypeScript', 'Class name, for example BankAccount', 'BankAccount').then((c) => c && translateClass(c.trim()))],
+      ['Open the TypeScript translator page', () => window.open('../translate/', '_blank')],
       ['Run benchmarks', () => evaluate('Benchmark runAll', '', false)],
       '-',
       ['Clear Transcript', () => transcript.clear()],
@@ -464,7 +468,50 @@ function codeArea(value) {
       ta.setRangeText('\t', s, ta.selectionEnd, 'end');
     }
   });
+  // syntax highlighting: `ta.mount` is the element to put in the window
+  ta.mount = attachHighlighter(ta, 'st');
   return ta;
+}
+
+// ------------------------------------------------------------------ TypeScript translation
+
+const looksLikeFileIn = (t) => /Delta define:|methodsFor:/.test(t);
+
+function openTypeScript(title, r, sourceName) {
+  if (!r.ok) {
+    transcript.error(`Could not translate ${sourceName}: line ${r.line}, column ${r.column}: ${r.error}\n`);
+    return;
+  }
+  const w = createWindow({ title: 'TypeScript: ' + title, width: 680, height: 560, kind: 'typescript', tall: true });
+  const pre = el('pre', { class: 'code sunken tsout' });
+  pre.innerHTML = highlightTranslation(r.code);
+  bindFolds(pre);
+  const fileName = (sourceName || 'translation').replace(/[^A-Za-z0-9_-]+/g, '_') + '.ts';
+  const status = el('div', { class: 'status' + (r.warnings.length ? ' warn' : ''),
+    text: r.warnings.length ? `${r.warnings.length} note(s): ` + r.warnings.join(' · ') : 'Translated with no notes. Runs with node ' + fileName + ' (Node 22+) or any TypeScript compiler.',
+    title: r.warnings.join('\n') });
+  const tb = el('div', { class: 'toolbar' },
+    el('button', { class: 'btn', text: 'Copy', onclick: async () => { try { await navigator.clipboard.writeText(r.code); status.textContent = 'Copied to the clipboard.'; } catch { status.textContent = 'Copying is not allowed here; select the text instead.'; } } }),
+    el('button', { class: 'btn', text: 'Download .ts', onclick: () => download(fileName, r.code) }),
+    el('span', { class: 'tsep' }),
+    el('button', { class: 'btn', text: 'Open in the translator', title: 'The side-by-side translator page, with this code', onclick: () => {
+      const b = btoa(String.fromCharCode(...new TextEncoder().encode(r.source || ''))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      window.open('../translate/#code=' + b, '_blank');
+    } }));
+  w.body.append(tb, pre, status);
+  return w;
+}
+
+async function translateText(text, title) {
+  const r = await vm.call('toTypeScript', text);
+  r.source = text;
+  return openTypeScript(title, r, title);
+}
+
+async function translateClass(name) {
+  const r = await vm.call('classToTypeScript', name);
+  if (r.ok) r.source = await vm.call('fileOut', name);
+  return openTypeScript(name, r, name);
 }
 
 function selectionOrParagraph(ta) {
@@ -481,7 +528,7 @@ function openWorkspace(text, title) {
   const w = createWindow({ title: title || `Workspace ${wsCount}`, width: 640, height: 600,
     x: wsCount === 1 ? 584 : undefined, y: wsCount === 1 ? 12 : undefined, kind: 'workspace', tall: true });
   const ta = codeArea(text === undefined ? (wsCount === 1 ? WELCOME : '') : text);
-  const status = el('div', { class: 'status', text: 'Ctrl+D do it · Ctrl+P print it · Ctrl+I inspect it · Ctrl+T typecheck' });
+  const status = el('div', { class: 'status', text: 'Ctrl+D do it · Ctrl+P print it · Ctrl+I inspect it · Ctrl+T typecheck · Ctrl+E TypeScript' });
   const setMsg = (t, err) => { status.textContent = t; status.classList.toggle('err', !!err); };
 
   async function run(mode) {
@@ -533,8 +580,16 @@ function openWorkspace(text, title) {
       setMsg(`Filed in: ${r.methods} methods, ${r.doits} definitions` + (r.errors.length ? ` — ${r.errors[0]}` : ''), r.errors.length > 0);
       refreshBrowsers();
     } }),
+    el('button', { class: 'btn', text: '→ TypeScript', title: 'Translate the selection (or the whole text if it is a file-in, else the paragraph) to TypeScript (Ctrl+E)', onclick: () => toTS() }),
     el('button', { class: 'btn', text: 'Clear', onclick: () => { ta.value = ''; ta.focus(); } }));
-  w.body.append(tb, ta, status);
+  function toTS() {
+    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+    const text = sel.trim() ? sel : looksLikeFileIn(ta.value) ? ta.value : selectionOrParagraph(ta).text;
+    if (!text.trim()) return;
+    translateText(text, w.title || 'workspace');
+  }
+  ta.addEventListener('keydown', (ev) => { if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'e') { ev.preventDefault(); toTS(); } });
+  w.body.append(tb, ta.mount, status);
   setTimeout(() => { ta.focus(); ta.setSelectionRange(0, 0); ta.scrollTop = 0; }, 0);
   return w;
 }
@@ -631,7 +686,8 @@ async function openBrowser(name, focus) {
     el('button', { class: 'btn', text: 'New method', onclick: () => newMethod() }),
     el('button', { class: 'btn', text: 'Typecheck', onclick: () => typecheckClass() }),
     el('button', { class: 'btn', text: 'Hierarchy', onclick: () => openHierarchy(name) }),
-    el('button', { class: 'btn', text: 'File out', onclick: async () => download(name + '.dlt', await vm.call('fileOut', name)) }));
+    el('button', { class: 'btn', text: 'File out', onclick: async () => download(name + '.dlt', await vm.call('fileOut', name)) }),
+    el('button', { class: 'btn', text: '→ TypeScript', title: 'Translate this class to TypeScript', onclick: () => translateClass(name) }));
   const outline = el('div', { class: 'outline sunken' });
   w.body.append(tb, outline);
   let info = info0;
@@ -664,7 +720,7 @@ async function openBrowser(name, focus) {
       }
     };
     ta.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); accept(); } });
-    return el('div', { class: 'editor' }, ta, el('div', { class: 'toolbar' }, el('button', { class: 'btn small', text: 'Accept', title: 'Compile (Ctrl+S)', onclick: accept }), ...extra), msg);
+    return el('div', { class: 'editor' }, ta.mount, el('div', { class: 'toolbar' }, el('button', { class: 'btn small', text: 'Accept', title: 'Compile (Ctrl+S)', onclick: accept }), ...extra), msg);
   }
 
   function methodRow(m, meta) {

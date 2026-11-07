@@ -3,6 +3,13 @@
 use crate::api::Vm;
 use wasm_bindgen::prelude::*;
 
+/// Translates Strongtalk (a file-in or a do-it) to TypeScript. Answers JSON:
+/// `{ok, code, warnings, error, line, column, classes}`.
+#[wasm_bindgen(js_name = translateToTypeScript)]
+pub fn translate_to_typescript(src: &str) -> String {
+    crate::typescript::translate(src).to_json()
+}
+
 #[wasm_bindgen]
 pub struct Strongtalk {
     vm: Vm,

@@ -6,6 +6,11 @@
 //!   strongtalk -e '3 + 4'          print the value of one expression
 //!   strongtalk --typecheck [Class] type-check a class (or every class)
 //!   strongtalk --bench             run Benchmark runAll
+//!   strongtalk --to-ts file.dlt    translate Strongtalk to TypeScript (-e 'code' for a do-it,
+//!                                  -o out.ts to write a file)
+//!   strongtalk web                 open the Strongtalk environment in the browser (local server)
+
+mod localweb;
 
 use serde_json::Value as J;
 use std::io::{self, BufRead, Write};
@@ -116,8 +121,84 @@ fn balanced(s: &str) -> bool {
     depth <= 0 && !in_str && !in_comment
 }
 
+/// `strongtalk --to-ts [file.dlt | -e code | -] [-o out.ts]`: no VM needed, only the parser.
+fn to_typescript(args: &[String]) -> i32 {
+    let mut src: Option<String> = None;
+    let mut out: Option<String> = None;
+    let mut name = String::from("input");
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "-e" => {
+                i += 1;
+                src = args.get(i).cloned();
+                name = "expression".into();
+            }
+            "-o" => {
+                i += 1;
+                out = args.get(i).cloned();
+            }
+            "-" => {
+                let mut s = String::new();
+                if io::Read::read_to_string(&mut io::stdin(), &mut s).is_err() {
+                    eprintln!("cannot read standard input");
+                    return 1;
+                }
+                src = Some(s);
+                name = "stdin".into();
+            }
+            path => match std::fs::read_to_string(path) {
+                Ok(s) => {
+                    src = Some(s);
+                    name = path.to_string();
+                }
+                Err(e) => {
+                    eprintln!("cannot read {}: {}", path, e);
+                    return 1;
+                }
+            },
+        }
+        i += 1;
+    }
+    let src = match src {
+        Some(s) => s,
+        None => {
+            eprintln!("usage: strongtalk --to-ts file.dlt [-o out.ts]\n       strongtalk --to-ts -e '(1 to: 10) collect: [:i | i * i]'");
+            return 1;
+        }
+    };
+    let t = strongtalk::typescript::translate(&src);
+    if !t.ok {
+        eprintln!("{}:{}:{}: syntax error: {}", name, t.line, t.column, t.error.unwrap_or_default());
+        return 1;
+    }
+    for w in &t.warnings {
+        eprintln!("note: {}", w);
+    }
+    match out {
+        Some(path) => {
+            if let Err(e) = std::fs::write(&path, &t.code) {
+                eprintln!("cannot write {}: {}", path, e);
+                return 1;
+            }
+            eprintln!("wrote {}", path);
+        }
+        None => print!("{}", t.code),
+    }
+    0
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    match args.first().map(|a| a.as_str()) {
+        Some("--to-ts") | Some("ts") => std::process::exit(to_typescript(&args[1..])),
+        Some("web") | Some("--web") => std::process::exit(localweb::serve(&args[1..])),
+        Some("--version") | Some("-V") => {
+            println!("strongtalk {}", env!("CARGO_PKG_VERSION"));
+            return;
+        }
+        _ => {}
+    }
     let child = std::thread::Builder::new()
         .stack_size(512 * 1024 * 1024)
         .spawn(move || run(args))
@@ -146,7 +227,17 @@ fn run(args: Vec<String>) -> i32 {
     while i < args.len() {
         match args[i].as_str() {
             "-h" | "--help" => {
-                println!("usage: strongtalk [file.dlt ...] [-e expression] [--typecheck [Class]] [--bench] [-i]");
+                println!("Strongtalk {} - the typed Smalltalk, in Rust\n", env!("CARGO_PKG_VERSION"));
+                println!("usage:");
+                println!("  strongtalk                        interactive workspace (an empty line runs the code)");
+                println!("  strongtalk file.dlt ...           file in source files and run their do-its");
+                println!("  strongtalk -e '3 + 4'             print the value of an expression");
+                println!("  strongtalk --typecheck [Class]    type-check one class or all classes");
+                println!("  strongtalk --bench                run the benchmarks");
+                println!("  strongtalk --to-ts file.dlt [-o out.ts]   translate Strongtalk to TypeScript");
+                println!("  strongtalk --to-ts -e 'code'      translate a snippet to TypeScript");
+                println!("  strongtalk web [translate]        open the environment (or translator) in the browser");
+                println!("  strongtalk --version");
             }
             "-e" => {
                 i += 1;

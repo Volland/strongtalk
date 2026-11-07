@@ -1,6 +1,6 @@
 // Runs the Strongtalk virtual machine (Rust compiled to WebAssembly) off the page's thread,
 // so a long or endless computation never freezes the window and can be interrupted.
-import init, { Strongtalk } from './pkg/strongtalk.js';
+import init, { Strongtalk, translateToTypeScript } from './pkg/strongtalk.js';
 
 let vm = null;
 const NESTING_PER_FRAME = 0.05;
@@ -47,6 +47,8 @@ function call(op, a) {
     case 'implementors': return vm.implementors(a[0]);
     case 'fileOut': return JSON.stringify(vm.fileOut(a[0]));
     case 'inspect': return vm.inspect(a[0]);
+    case 'toTypeScript': return translateToTypeScript(a[0]);
+    case 'classToTypeScript': return translateToTypeScript(vm.fileOut(a[0]));
     default: throw new Error('unknown operation ' + op);
   }
 }

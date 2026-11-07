@@ -1,0 +1,88 @@
+Delta define: #Shape as: (
+(Class subclassOf: 'Object' instanceVariables: 'name <Str>')) !
+(Delta mirrorFor: #Shape) comment: 'An abstract shape with a name.' !
+
+! (Delta mirrorFor: #Shape) methodsFor: 'accessing' !
+
+name ^<Str>
+	^name
+!
+
+name: aName <Str> ^<Self>
+	name := aName
+!
+
+area ^<Float>
+	"Subclasses answer their area."
+	^self subclassResponsibility
+!
+
+describe ^<Str>
+	^name , ' with area ' , self area printString
+! !
+
+Delta define: #Circle as: (
+(Class subclassOf: 'Shape' instanceVariables: 'radius <Int>')) !
+
+! (Delta mirrorFor: #Circle) classSide methodsFor: 'instance creation' !
+
+radius: r <Int> ^<Instance>
+	^self new setRadius: r
+! !
+
+! (Delta mirrorFor: #Circle) methodsFor: 'accessing' !
+
+setRadius: r <Int> ^<Self>
+	radius := r.
+	self name: 'circle'
+!
+
+area ^<Float>
+	^radius * radius * 3
+! !
+
+Delta define: #Rect as: (
+(Class subclassOf: 'Shape' instanceVariables: 'w <Int> h <Int>')) !
+
+! (Delta mirrorFor: #Rect) classSide methodsFor: 'instance creation' !
+
+w: a <Int> h: b <Int> ^<Instance>
+	^self new setW: a h: b
+! !
+
+! (Delta mirrorFor: #Rect) methodsFor: 'accessing' !
+
+setW: a <Int> h: b <Int> ^<Self>
+	w := a. h := b.
+	self name: 'rect'
+!
+
+area ^<Float>
+	^w * h
+!
+
+firstBiggerThan: n <Int> in: shapes <OrderedCollection[Shape]> ^<Shape>
+	shapes do: [:s <Shape> | s area > n ifTrue: [^s]].
+	^nil
+!
+
+anyOver: n <Int> in: shapes <OrderedCollection[Shape]> ^<Bool>
+	shapes reverseDo: [:s | s area > n ifTrue: [^true]].
+	^false
+!
+
+firstOver: n <Int> in: shapes <OrderedCollection[Shape]> ^<Shape>
+	shapes anySatisfy: [:s | s area > n ifTrue: [^s]. false].
+	^nil
+! !
+
+| shapes <OrderedCollection[Shape]> r <Rect> |
+shapes := OrderedCollection new.
+shapes add: (Circle radius: 2); add: (Rect w: 3 h: 4); add: (Circle radius: 1).
+shapes do: [:s <Shape> | Transcript show: s describe; cr].
+r := Rect w: 1 h: 1.
+Transcript show: (r firstBiggerThan: 11 in: shapes) describe; cr.
+Transcript show: (r firstOver: 11 in: shapes) describe; cr.
+Transcript print: (r anyOver: 100 in: shapes); cr.
+Transcript print: ((shapes collect: [:s | s area]) inject: 0 into: [:a :b | a + b]); cr.
+Transcript show: ((shapes detect: [:s | s area < 5]) name); cr !

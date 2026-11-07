@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Strongtalk
+GenericName=Smalltalk environment
+Comment=The typed Smalltalk environment, in your browser
+Exec=strongtalk web
+Icon=strongtalk
+Terminal=true
+Categories=Development;IDE;
+Keywords=smalltalk;strongtalk;typescript;

@@ -1,12 +1,13 @@
 {
   "name": "strongtalk-web",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Strongtalk (typed Smalltalk) re-implemented in Rust, running in the browser through WebAssembly",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
     "build:native": "cargo build --release --manifest-path vm/Cargo.toml",
-    "test": "RUST_MIN_STACK=536870912 cargo test --release --manifest-path vm/Cargo.toml"
+    "test": "RUST_MIN_STACK=536870912 cargo test --release --manifest-path vm/Cargo.toml",
+    "test:typescript": "scripts/check-typescript.sh"
   }
 }

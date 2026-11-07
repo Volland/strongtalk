@@ -1,5 +1,7 @@
 // The home page's live workspace: starts the same WebAssembly VM the environment uses
-// (try/worker.js) on first use, and prints the result of the code in the box.
+// (try/worker.js) on first use, and prints the result of the code in the box, or its
+// TypeScript translation.
+import { attachHighlighter, highlightTypeScript, highlightPage } from './highlight.js';
 const EXAMPLES = [
   ['Squares', '(1 to: 10) collect: [:i <Int> | i * i]'],
   ['100 factorial', '100 factorial'],
@@ -19,6 +21,7 @@ const out = document.getElementById('play-out');
 const runBtn = document.getElementById('play-run');
 const status = document.getElementById('play-status');
 const chips = document.getElementById('play-chips');
+const tsBtn = document.getElementById('play-ts');
 
 let worker = null;
 let booting = null;
@@ -107,6 +110,7 @@ for (const [label, code] of EXAMPLES) {
   b.setAttribute('aria-pressed', String(code === src.value));
   b.addEventListener('click', () => {
     src.value = code;
+    src.highlight && src.highlight();
     chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
     run();
   });
@@ -114,6 +118,29 @@ for (const [label, code] of EXAMPLES) {
 }
 
 runBtn.addEventListener('click', run);
+
+async function showTypeScript() {
+  const code = src.value.trim();
+  if (!code) return;
+  tsBtn.disabled = true;
+  try {
+    await startWorker();
+    const r = await call('toTypeScript', code);
+    if (!r.ok) { out.innerHTML = `<span class="e">Syntax error (line ${r.line}): ${esc(r.error)}</span>`; return; }
+    // the program part, without the runtime prelude
+    const body = r.code.replace(/^\/\/ Translated[^\n]*\n/, '').replace(/\/\/ ---- Strongtalk runtime[\s\S]*?\/\/ ---- end of runtime ----\n\n?/, '').trim();
+    const usedRuntime = r.code.includes('---- Strongtalk runtime');
+    out.innerHTML = highlightTypeScript(body) + (usedRuntime ? `\n<span class="m">// + a small runtime: open the translator for the whole file</span>` : '');
+    setState('ready', 'TypeScript');
+  } catch (e) {
+    out.innerHTML = `<span class="e">${esc(e.message)}</span>`;
+  } finally {
+    tsBtn.disabled = false;
+  }
+}
+tsBtn.addEventListener('click', showTypeScript);
+attachHighlighter(src, 'st');
+highlightPage(document);
 src.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); run(); }
   if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); document.execCommand('insertText', false, '    '); }

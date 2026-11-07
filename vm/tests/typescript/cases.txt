@@ -1,0 +1,28 @@
+3 + 4 * 2
+(1 to: 10) collect: [:i <Int> | i * i]
+(3/4) + (1/4)
+[:x <Int> | x * 2] value: 21
+(1 to: 50) select: [:n | n isPrime]
+[1/0] on: ZeroDivide do: [:e | 'caught: ', e messageText]
+Transcript show: 'Hello from Strongtalk'; cr. 3 + 4 * 2
+#(3 1 4 1 5 9 2 6) asSortedCollection asArray
+| s <Int> | s := 0. 1 to: 100 do: [:i <Int> | i odd ifTrue: [s := s + i]]. s
+| oc <OrderedCollection[Int]> | oc := OrderedCollection new. oc add: 3; add: 4; add: 5. oc inject: 0 into: [:a :b | a + b]
+| d <Dictionary[Str, Int]> | d := Dictionary new. d at: 'a' put: 1. d at: 'b' put: 2. (d at: 'b') + d size
+#(1 2 3 4) detect: [:x | x > 2]
+#(1 2 3 4) reject: [:x | x even]
+| n <Int> | n := 10. [n > 1] whileTrue: [n := n // 2]. n
+(17 \\ 5) + (-17 \\ 5)
+| a | a := Array new: 3. a at: 1 put: 'x'; at: 3 put: 'z'. a
+| w | w := WriteStream on: String new. w nextPutAll: 'n='; print: 42. w contents
+(1 to: 5) inject: 1 into: [:acc :i | acc * i]
+| x | x := nil. x isNil ifTrue: ['empty'] ifFalse: ['full']
+| count | count := 0. 5 timesRepeat: [count := count + 2]. count
+#(5 3 9) inject: 0 into: [:m :e | m max: e]
+'hello world' substrings size
+| r | r := 0. #(1 2 3) doWithIndex: [:e :i | r := r + (e * i)]. r
+[:a :b | a , b] value: 'ab' value: 'cd'
+(1 to: 10 by: 3) asArray
+#(1 2 3) , #(4 5)
+(2 raisedTo: 10) printString size
+20 factorial

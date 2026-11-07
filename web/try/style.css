@@ -251,3 +251,37 @@ textarea.code:focus { box-shadow: inset 1px 1px 0 var(--face-dk), 0 0 0 1px #6b8
   .split .list { max-height: 160px; }
   .tree { max-height: 60vh; }
 }
+
+/* ---------- syntax highlighting (editor overlay: highlight.js) ---------- */
+.hl-wrap { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.win .body > .hl-wrap { flex: 1; }
+.editor .hl-wrap { flex: none; }
+.hl-wrap > textarea.code.hl-over { position: relative; z-index: 1; background: transparent; color: transparent; caret-color: #000; }
+.hl-wrap > textarea.code.hl-over::selection { background: rgba(10, 36, 106, 0.28); color: transparent; }
+.hl-under {
+  position: absolute; z-index: 0; margin: 0; box-sizing: border-box; overflow: hidden; pointer-events: none;
+  background: #fff; color: #000; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal;
+}
+.t-c { color: #2e7d32; font-style: italic; }
+.t-s { color: #a31515; }
+.t-ch, .t-sym { color: #7b1fa2; }
+.t-n { color: #0b6e4f; }
+.t-ty { color: var(--type); }
+.t-kw { color: #00287a; font-weight: bold; }
+.t-pv { color: #0033cc; }
+.t-cls { color: #1a6280; }
+.t-ret { color: #b00020; font-weight: bold; }
+.t-op { color: #555; }
+.t-par { color: #7a4b00; }
+.t-prim { color: #b05000; font-weight: bold; }
+.t-chunk { color: #999; }
+.t-fn { color: #6b4400; }
+
+/* ---------- TypeScript window ---------- */
+pre.code.tsout { flex: 1; margin: 0; padding: 4px 6px; overflow: auto; white-space: pre; user-select: text; }
+.status.warn { color: #7a4b00; }
+
+/* folded runtime prelude in translated TypeScript */
+.ts-fold { color: #7a4b00; cursor: pointer; font-style: italic; text-decoration: underline dotted; }
+.ts-fold-body { display: none; }
+.ts-fold.open + .ts-fold-body { display: inline; }

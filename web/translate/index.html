@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strongtalk to TypeScript</title>
+  <meta name="description" content="Translate Strongtalk, the typed Smalltalk, to readable TypeScript in your browser. Run both side by side to compare the output.">
+  <meta name="theme-color" content="#0b1830">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="../"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a href="../articles/history.html">History</a>
+        <a href="../articles/types.html">Types</a>
+        <a class="on" href="./">TypeScript</a>
+        <a href="../download/">Download</a>
+        <a href="https://github.com/Volland/strongtalk">GitHub</a>
+        <a class="cta" href="../try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="tr-hero">
+    <div class="in">
+      <span class="kicker">Strongtalk → TypeScript</span>
+      <h1>Translate typed Smalltalk to <em>TypeScript</em></h1>
+      <p>Paste a workspace snippet or a whole file of classes. Strongtalk's type annotations become TypeScript types,
+        and messages like <code>ifTrue:</code>, <code>to:do:</code> and <code>collect:</code> become <code>if</code>,
+        <code>for</code> and <code>map</code>. Press <b>Run both</b> to check the result: the original runs in the Strongtalk VM
+        and the translation runs as TypeScript, side by side.</p>
+    </div>
+  </section>
+
+  <section class="tr-app" aria-label="Translator">
+    <div class="tr-bar">
+      <label class="tr-select"><span>Example</span>
+        <select id="examples"></select>
+      </label>
+      <span class="tr-grow"></span>
+      <button class="tbtn primary" id="run" type="button"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>Run both</button>
+      <button class="tbtn" id="copy" type="button">Copy TypeScript</button>
+      <button class="tbtn" id="download" type="button">Download .ts</button>
+      <button class="tbtn" id="share" type="button">Share link</button>
+    </div>
+    <div class="tr-panes">
+      <div class="pane">
+        <div class="pane-head"><b>Strongtalk</b><span id="mode" class="badge">workspace code</span></div>
+        <label for="src" style="position:absolute;left:-9999px">Strongtalk source</label>
+        <textarea id="src" class="pane-code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><b>TypeScript</b><span id="tsinfo" class="badge">loading the translator…</span></div>
+        <pre id="out" class="pane-code out" aria-live="polite" tabindex="0"></pre>
+      </div>
+    </div>
+    <div class="tr-notes" id="notes" hidden></div>
+    <div class="tr-run" id="runbox" hidden>
+      <div class="run-col"><div class="pane-head"><b>Strongtalk VM</b><span class="badge" id="vmtime"></span></div><pre id="vmout"></pre></div>
+      <div class="run-col"><div class="pane-head"><b>TypeScript</b><span class="badge" id="tstime"></span></div><pre id="tsout"></pre></div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="how">
+    <div class="sec-head">
+      <span class="kicker">How it maps</span>
+      <h2>Readable output, <em>faithful where it matters</em></h2>
+      <p class="sub">The declared types choose the translation: a variable typed <code>&lt;OrderedCollection[Int]&gt;</code>
+        gets plain array code, while an untyped one goes through a small runtime helper that behaves like Smalltalk.
+        Only the helpers a program uses are included, so every output is one file that runs on its own.</p>
+    </div>
+    <div class="map">
+      <div class="map-row"><pre data-lang="st">x &lt;Int&gt; ^&lt;Self&gt;</pre><pre data-lang="ts">x: number): this</pre><p>Type annotations become TypeScript types: <code>Int</code>, <code>Str</code>, <code>Bool</code>, generics, block types, unions.</p></div>
+      <div class="map-row"><pre data-lang="st">a &gt; b ifTrue: [a] ifFalse: [b]</pre><pre data-lang="ts">a &gt; b ? a : b</pre><p>Control messages with literal blocks become statements or expressions.</p></div>
+      <div class="map-row"><pre data-lang="st">1 to: n do: [:i | s := s + i]</pre><pre data-lang="ts">for (let i = 1; i &lt;= n; i++) {
+  s = s + i;
+}</pre><p><code>to:do:</code>, <code>timesRepeat:</code>, <code>do:</code> and <code>whileTrue:</code> become loops.</p></div>
+      <div class="map-row"><pre data-lang="st">nums inject: 0 into: [:a :b | a + b]</pre><pre data-lang="ts">nums.reduce((a, b) =&gt; a + b, 0)</pre><p>Collection messages map to array methods; <code>at:</code> stays 1-based.</p></div>
+      <div class="map-row"><pre data-lang="st">3 + 4 * 2</pre><pre data-lang="ts">(3 + 4) * 2</pre><p>Binary messages go left to right in Smalltalk, so parentheses are added where JavaScript precedence differs.</p></div>
+      <div class="map-row"><pre data-lang="st">shapes do: [:s | s area &gt; n ifTrue: [^s]]</pre><pre data-lang="ts">for (const s of shapes) {
+  if (s.area() &gt; n) {
+    return s;
+  }
+}</pre><p>A <code>^</code> inside a block returns from the method, as in Smalltalk, even through closures.</p></div>
+    </div>
+    <div class="note limits"><b>Where it differs.</b> Numbers become JavaScript numbers (exact integers up to 2<sup>53</sup>;
+      <code>factorial</code> switches to BigInt), <code>/</code> on integers gives a decimal instead of a fraction, characters and
+      symbols become strings, and an OrderedCollection becomes an array (so it prints as <code>#(…)</code>). Messages with no known equivalent are kept as method calls and listed in the notes.</div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="kicker">Three ways</span>
+        <h2>Here, in the console, or in the environment</h2>
+      </div>
+      <div class="getit three">
+        <div class="panel">
+          <h3>This page</h3>
+          <p>Translation runs in your browser (the translator is compiled to WebAssembly); nothing is uploaded.</p>
+        </div>
+        <div class="panel">
+          <h3>The console</h3>
+          <p>The <code>strongtalk</code> command translates files and expressions.</p>
+<pre class="term"><span class="p">$ </span>strongtalk --to-ts shapes.dlt -o shapes.ts
+<span class="p">$ </span>strongtalk --to-ts -e '100 factorial'
+<span class="p">$ </span>node shapes.ts</pre>
+        </div>
+        <div class="panel">
+          <h3>The environment</h3>
+          <p>In a workspace, select code and press <b>→ TypeScript</b> (Ctrl+E). A class browser translates its whole class.</p>
+          <a class="btn line" href="../try/">Open the environment <span class="arr">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="in">
+      <span>Strongtalk was created by Animorphic Systems and released as open source by Sun Microsystems.
+        This site and its Rust/WebAssembly edition are an independent re-implementation.</span>
+      <span class="links"><a href="../try/">Environment</a><a href="../download/">Download</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span>
+    </div>
+  </footer>
+
+  <script type="module" src="translate.js"></script>
+</body>
+</html>

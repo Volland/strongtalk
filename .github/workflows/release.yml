@@ -1,0 +1,176 @@
+# Builds Strongtalk for macOS, Windows and Linux and, for a version tag (v2.1.0), publishes the
+# installers as a GitHub release. Run it by hand (workflow_dispatch) to build without releasing.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Language tests
+        run: cargo test --release --manifest-path vm/Cargo.toml
+        env:
+          RUST_MIN_STACK: '536870912'
+      - name: TypeScript translations behave like the VM
+        run: scripts/check-typescript.sh
+
+  macos:
+    needs: test
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Build a universal binary
+        run: |
+          for t in aarch64-apple-darwin x86_64-apple-darwin; do
+            cargo build --release --manifest-path vm/Cargo.toml --bin strongtalk --target $t
+          done
+          mkdir -p out
+          lipo -create -output out/strongtalk \
+            vm/target/aarch64-apple-darwin/release/strongtalk vm/target/x86_64-apple-darwin/release/strongtalk
+          lipo -info out/strongtalk
+          out/strongtalk --version
+      - name: Package
+        run: |
+          VERSION=$(grep -m1 '^version' vm/Cargo.toml | cut -d'"' -f2)
+          packaging/macos/build-pkg.sh out/strongtalk "$VERSION" out/strongtalk-macos-universal.pkg
+          tar -czf out/strongtalk-macos-universal.tar.gz -C out strongtalk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            out/strongtalk-macos-universal.pkg
+            out/strongtalk-macos-universal.tar.gz
+
+  linux:
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+            deb: amd64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            deb: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build a static binary
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools
+          cargo build --release --manifest-path vm/Cargo.toml --bin strongtalk --target ${{ matrix.target }}
+          mkdir -p out
+          cp vm/target/${{ matrix.target }}/release/strongtalk out/strongtalk
+          strip out/strongtalk
+          file out/strongtalk
+          out/strongtalk --version
+          out/strongtalk -e '100 factorial printString size'
+      - name: Package
+        run: |
+          VERSION=$(grep -m1 '^version' vm/Cargo.toml | cut -d'"' -f2)
+          tar -czf out/strongtalk-linux-${{ matrix.arch }}.tar.gz -C out strongtalk
+          packaging/linux/build-deb.sh out/strongtalk "$VERSION" ${{ matrix.deb }} out/strongtalk-linux-${{ matrix.arch }}.deb
+          dpkg-deb --info out/strongtalk-linux-${{ matrix.arch }}.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: |
+            out/strongtalk-linux-${{ matrix.arch }}.tar.gz
+            out/strongtalk-linux-${{ matrix.arch }}.deb
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        shell: bash
+        run: |
+          cargo build --release --manifest-path vm/Cargo.toml --bin strongtalk
+          mkdir -p out
+          cp vm/target/release/strongtalk.exe out/strongtalk.exe
+          out/strongtalk.exe --version
+          out/strongtalk.exe -e '3 + 4 * 2'
+      - name: Portable zip
+        shell: pwsh
+        run: Compress-Archive -Path out/strongtalk.exe -DestinationPath out/strongtalk-windows-x64.zip
+      - name: Installer
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path vm/Cargo.toml -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches.Groups[1].Value
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+            choco install innosetup -y --no-progress | Out-Null
+            $env:Path += ";${env:ProgramFiles(x86)}\Inno Setup 6"
+          }
+          iscc /DAppVersion=$version "/DSourceExe=$PWD\out\strongtalk.exe" "/DOutDir=$PWD\out" packaging\windows\strongtalk.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            out/strongtalk-windows-x64-setup.exe
+            out/strongtalk-windows-x64.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [macos, linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          TAG="${GITHUB_REF_NAME}"
+          cat > notes.md <<NOTES
+          ## Strongtalk ${TAG#v}
+
+          One program with the terminal workspace, the type checker, the **Strongtalk → TypeScript** translator
+          and the full graphical environment (\`strongtalk web\` opens it in your browser, offline).
+
+          | System | Installer | Archive |
+          |---|---|---|
+          | macOS 11+ (Apple silicon and Intel) | \`strongtalk-macos-universal.pkg\` | \`strongtalk-macos-universal.tar.gz\` |
+          | Windows 10/11 (x64) | \`strongtalk-windows-x64-setup.exe\` | \`strongtalk-windows-x64.zip\` |
+          | Linux x64 (static) | \`strongtalk-linux-x64.deb\` | \`strongtalk-linux-x64.tar.gz\` |
+          | Linux arm64 (static) | \`strongtalk-linux-arm64.deb\` | \`strongtalk-linux-arm64.tar.gz\` |
+
+          Or in a terminal: \`curl -fsSL https://volland.github.io/strongtalk/install.sh | sh\` (macOS, Linux),
+          \`irm https://volland.github.io/strongtalk/install.ps1 | iex\` (Windows PowerShell).
+
+          The programs are not code-signed yet: on macOS Control-click the .pkg and choose Open; on Windows choose
+          *More info → Run anyway* if SmartScreen warns.
+          NOTES
+          sed -i 's/^          //' notes.md
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Strongtalk ${TAG#v}" --notes-file notes.md \
+            strongtalk-* SHA256SUMS.txt

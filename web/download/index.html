@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download Strongtalk</title>
+  <meta name="description" content="Install Strongtalk on macOS, Windows or Linux: the terminal workspace, the TypeScript translator and the full environment, offline.">
+  <meta name="theme-color" content="#0b1830">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23163a6b'/%3E%3Ctext x='16' y='23' font-family='Georgia' font-size='20' font-weight='bold' fill='%23f5c04a' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="../site.css">
+</head>
+<body>
+  <header class="top">
+    <div class="bar">
+      <a class="brand" href="../"><span class="logo">S</span>Strongtalk</a>
+      <nav>
+        <a href="../articles/history.html">History</a>
+        <a href="../articles/types.html">Types</a>
+        <a href="../translate/">TypeScript</a>
+        <a class="on" href="./">Download</a>
+        <a href="https://github.com/Volland/strongtalk">GitHub</a>
+        <a class="cta" href="../try/">Try it</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="tr-hero dl-hero">
+    <div class="in">
+      <span class="kicker">Download</span>
+      <h1>Strongtalk on your own computer</h1>
+      <p>One small program with everything in it: the terminal workspace, the type checker, the
+        <b>Strongtalk → TypeScript</b> translator, and the full graphical environment, which
+        <code>strongtalk web</code> opens in your browser, offline. No runtime to install.</p>
+    </div>
+  </section>
+
+  <main class="dl-main">
+    <div class="dl-primary" id="primary">
+      <div>
+        <h2 id="primary-title">Choose your system</h2>
+        <p id="primary-text">Installers for macOS, Windows and Linux are below.</p>
+      </div>
+      <div class="btns" id="primary-btns">
+        <a class="btn primary" href="#all">All downloads <span class="arr">↓</span></a>
+      </div>
+    </div>
+
+    <div class="dl-grid" id="all">
+      <div class="dl-card" data-os="mac">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3a4 4 0 0 0 0 8h2v2H7a4 4 0 1 0 4 4v-2h2v2a4 4 0 1 0 4-4h-2v-2h2a4 4 0 1 0-4-4v2h-2V7a4 4 0 0 0-4-4zm0 2a2 2 0 0 1 2 2v2H7a2 2 0 0 1 0-4zm10 0a2 2 0 0 1 0 4h-2V7a2 2 0 0 1 2-2zm-6 6h2v2h-2v-2zm-4 4h2v2a2 2 0 1 1-2-2zm8 0h2a2 2 0 1 1-2 2v-2z"/></svg>macOS</h3>
+        <p class="what">macOS 11 or later, Apple silicon and Intel (one universal program).</p>
+        <ul>
+          <li><a class="main" href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-macos-universal.pkg">Installer (.pkg) <small>universal</small></a></li>
+          <li><a href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-macos-universal.tar.gz">Archive (.tar.gz) <small>universal</small></a></li>
+        </ul>
+        <p class="hint">The installer puts <code>strongtalk</code> in <code>/usr/local/bin</code>. It is not notarized yet: if macOS refuses to open it, Control-click the .pkg and choose <b>Open</b>.</p>
+      </div>
+      <div class="dl-card" data-os="win">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3V5.5zm0 13 7.5 1.1v-7.1H3v6zm8.5 1.3L21 21v-8.5h-9.5v7.3zm0-15.6v7.3H21V3l-9.5 1.2z"/></svg>Windows</h3>
+        <p class="what">Windows 10 and 11, 64-bit (also runs on Windows on ARM).</p>
+        <ul>
+          <li><a class="main" href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-windows-x64-setup.exe">Installer (.exe) <small>x64</small></a></li>
+          <li><a href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-windows-x64.zip">Portable (.zip) <small>x64</small></a></li>
+        </ul>
+        <p class="hint">The installer adds Start menu entries for the workspace and the environment, and can put <code>strongtalk</code> on your PATH. If SmartScreen warns, choose <b>More info → Run anyway</b>.</p>
+      </div>
+      <div class="dl-card" data-os="linux">
+        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v12h16V6H4zm2.3 2.3L10 12l-3.7 3.7-1.4-1.4L7.2 12 4.9 9.7l1.4-1.4zM11 15h7v2h-7v-2z"/></svg>Linux</h3>
+        <p class="what">Any distribution: the programs are statically linked.</p>
+        <ul>
+          <li><a class="main" href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-linux-x64.deb">Debian / Ubuntu (.deb) <small>x64</small></a></li>
+          <li><a href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-linux-arm64.deb">Debian / Ubuntu (.deb) <small>arm64</small></a></li>
+          <li><a href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-linux-x64.tar.gz">Archive (.tar.gz) <small>x64</small></a></li>
+          <li><a href="https://github.com/Volland/strongtalk/releases/latest/download/strongtalk-linux-arm64.tar.gz">Archive (.tar.gz) <small>arm64</small></a></li>
+        </ul>
+        <p class="hint">Install a .deb with <code>sudo apt install ./strongtalk-linux-x64.deb</code>.</p>
+      </div>
+    </div>
+  </main>
+
+  <section class="wrap">
+    <div class="getit">
+      <div class="panel">
+        <span class="kicker">One line</span>
+        <h3>Install from a terminal</h3>
+        <p>macOS and Linux: downloads the right program for your machine into <code>~/.local/bin</code>.</p>
+<pre class="term"><span class="p">$ </span>curl -fsSL https://volland.github.io/strongtalk/install.sh | sh</pre>
+        <p style="margin-top:18px">Windows (PowerShell):</p>
+<pre class="term"><span class="p">&gt; </span>irm https://volland.github.io/strongtalk/install.ps1 | iex</pre>
+      </div>
+      <div class="panel">
+        <span class="kicker">Then</span>
+        <h3>Three ways to use it</h3>
+        <ol class="steps">
+          <li><code>strongtalk</code> opens the terminal workspace. Type <code>100 factorial</code> and press Return.</li>
+          <li><code>strongtalk web</code> opens the full environment in your browser, served from the program itself, no internet needed. <code>strongtalk web translate</code> opens the translator.</li>
+          <li><code>strongtalk --to-ts file.dlt -o file.ts</code> translates Strongtalk to TypeScript; <code>node file.ts</code> runs it.</li>
+        </ol>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:32px">All releases, checksums and release notes are on <a href="https://github.com/Volland/strongtalk/releases">GitHub Releases</a>.
+      To build from source, see the <a href="https://github.com/Volland/strongtalk#building">README</a>.</p>
+  </section>
+
+  <footer class="foot">
+    <div class="in">
+      <span>Strongtalk was created by Animorphic Systems and released as open source by Sun Microsystems.
+        This site and its Rust/WebAssembly edition are an independent re-implementation.</span>
+      <span class="links"><a href="../try/">Environment</a><a href="../translate/">TypeScript</a><a href="https://github.com/Volland/strongtalk">GitHub</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // Suggest the download for this computer.
+    (function () {
+      const ua = navigator.userAgent;
+      const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+      const os = /Mac|iPhone|iPad/i.test(plat + ua) ? (/iPhone|iPad/i.test(ua) ? null : 'mac') : /Win/i.test(plat + ua) ? 'win' : /Linux|X11|CrOS/i.test(plat + ua) && !/Android/i.test(ua) ? 'linux' : null;
+      if (!os) return;
+      const card = document.querySelector('.dl-card[data-os="' + os + '"]');
+      card.classList.add('here');
+      const names = { mac: 'macOS', win: 'Windows', linux: 'Linux' };
+      document.getElementById('primary-title').textContent = 'Strongtalk for ' + names[os];
+      const main = card.querySelector('a.main');
+      const text = { mac: 'One installer for Apple silicon and Intel Macs.', win: 'A 64-bit installer with Start menu entries.', linux: 'A .deb for Debian and Ubuntu; archives for every distribution below.' };
+      document.getElementById('primary-text').textContent = text[os];
+      const btns = document.getElementById('primary-btns');
+      btns.innerHTML = '';
+      const a = document.createElement('a');
+      a.className = 'btn primary';
+      a.href = main.href;
+      a.innerHTML = 'Download ' + main.firstChild.textContent.trim() + ' <span class="arr">↓</span>';
+      const b = document.createElement('a');
+      b.className = 'btn line';
+      b.href = '#all';
+      b.textContent = 'Other systems';
+      btns.append(a, b);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+  <title>Strongtalk @VERSION@</title>
+  <welcome file="welcome.html" mime-type="text/html"/>
+  <conclusion file="conclusion.html" mime-type="text/html"/>
+  <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+  <domains enable_localSystem="true"/>
+  <pkg-ref id="io.github.volland.strongtalk"/>
+  <choices-outline>
+    <line choice="default"><line choice="io.github.volland.strongtalk"/></line>
+  </choices-outline>
+  <choice id="default"/>
+  <choice id="io.github.volland.strongtalk" visible="false"><pkg-ref id="io.github.volland.strongtalk"/></choice>
+  <pkg-ref id="io.github.volland.strongtalk" version="@VERSION@" onConclusion="none">strongtalk.pkg</pkg-ref>
+</installer-gui-script>

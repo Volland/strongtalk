@@ -10,6 +10,7 @@ pub mod lexer;
 pub mod natives;
 pub mod object;
 pub mod parser;
+pub mod typescript;
 pub mod prims;
 pub mod typecheck;
 pub mod vm;
