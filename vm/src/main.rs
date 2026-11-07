@@ -193,6 +193,13 @@ fn main() {
     match args.first().map(|a| a.as_str()) {
         Some("--to-ts") | Some("ts") => std::process::exit(to_typescript(&args[1..])),
         Some("web") | Some("--web") => std::process::exit(localweb::serve(&args[1..])),
+        Some("--license") | Some("--licence") => {
+            println!("{}", include_str!("../../LICENSE"));
+            println!("{}", include_str!("../../NOTICE"));
+            println!("{}", include_str!("../../LICENSE-0BSD"));
+            println!("{}", include_str!("../../THIRD-PARTY-NOTICES.txt"));
+            return;
+        }
         Some("--version") | Some("-V") => {
             println!("strongtalk {}", env!("CARGO_PKG_VERSION"));
             return;
@@ -237,7 +244,7 @@ fn run(args: Vec<String>) -> i32 {
                 println!("  strongtalk --to-ts file.dlt [-o out.ts]   translate Strongtalk to TypeScript");
                 println!("  strongtalk --to-ts -e 'code'      translate a snippet to TypeScript");
                 println!("  strongtalk web [translate]        open the environment (or translator) in the browser");
-                println!("  strongtalk --version");
+                println!("  strongtalk --version | --license");
             }
             "-e" => {
                 i += 1;

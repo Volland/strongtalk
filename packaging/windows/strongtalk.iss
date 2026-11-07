@@ -31,17 +31,22 @@ ChangesEnvironment=yes
 PrivilegesRequiredOverridesAllowed=dialog
 WizardStyle=modern
 UninstallDisplayIcon={app}\strongtalk.exe
+LicenseFile=..\..\LICENSE
 
 [Tasks]
 Name: "addtopath"; Description: "Add strongtalk to the PATH (use it from any terminal)"; GroupDescription: "Command line:"
 
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\..\LICENSE-0BSD"; DestDir: "{app}"; DestName: "LICENSE-0BSD.txt"; Flags: ignoreversion
+Source: "..\..\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Strongtalk Environment"; Filename: "{app}\strongtalk.exe"; Parameters: "web"; Comment: "The Strongtalk environment, in your browser"
 Name: "{group}\Strongtalk to TypeScript"; Filename: "{app}\strongtalk.exe"; Parameters: "web translate"; Comment: "The TypeScript translator, in your browser"
 Name: "{group}\Strongtalk Workspace (terminal)"; Filename: "{app}\strongtalk.exe"; Comment: "The terminal workspace"
+Name: "{group}\License"; Filename: "{app}\LICENSE.txt"
 Name: "{group}\Uninstall Strongtalk"; Filename: "{uninstallexe}"
 
 [Registry]

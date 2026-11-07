@@ -987,6 +987,9 @@ function openAbout() {
   on the Mac as a terminal program and here, compiled to <b>WebAssembly</b>, in a background thread of the page.</p>
   <p>The class library, browsers and type checker are new, written from the language's published design;
   the original image and its sources are not included.</p>
+  <p style="font-size:11.5px">Strongtalk © 1994–2006 Sun Microsystems Inc.; this edition © 2026 its contributors.
+  Free software under the <a href="../LICENSE.txt" target="_blank">BSD 3-Clause license</a>, the license Sun released Strongtalk under.
+  <a href="../THIRD-PARTY-NOTICES.txt" target="_blank">Third-party notices</a>.</p>
   <p id="aboutstats" style="color:#555"></p>`;
   vm.call('eval', "Smalltalk version, ' - ', Smalltalk classNames size printString, ' classes'", '', true)
     .then((r) => { const p = document.getElementById('aboutstats'); if (p && r.ok) p.textContent = r.value.replace(/^'|'$/g, ''); });

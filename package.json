@@ -1,7 +1,8 @@
 {
   "name": "strongtalk-web",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
+  "license": "BSD-3-Clause",
   "description": "Strongtalk (typed Smalltalk) re-implemented in Rust, running in the browser through WebAssembly",
   "type": "module",
   "scripts": {

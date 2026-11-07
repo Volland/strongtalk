@@ -9,6 +9,24 @@ trap 'rm -rf "$PKG"' EXIT
 install -Dm755 "$BIN" "$PKG/usr/bin/strongtalk"
 install -Dm644 "$HERE/strongtalk.desktop" "$PKG/usr/share/applications/strongtalk.desktop"
 install -Dm644 "$HERE/../icon.svg" "$PKG/usr/share/icons/hicolor/scalable/apps/strongtalk.svg"
+TOP="$HERE/../.."
+# Debian keeps license information in /usr/share/doc/<package>/copyright
+mkdir -p "$PKG/usr/share/doc/strongtalk"
+{
+  echo "Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/"
+  echo "Upstream-Name: strongtalk"
+  echo "Source: https://github.com/Volland/strongtalk"
+  echo
+  echo "Files: *"
+  echo "Copyright: 1994-2006 Sun Microsystems Inc."
+  echo "           2026 Volodymyr Pavlyshyn and the contributors to the Strongtalk Rust edition"
+  echo "License: BSD-3-Clause"
+  echo
+  echo "License: BSD-3-Clause"
+  sed -e 's/^$/./' -e 's/^/ /' "$TOP/LICENSE"
+} > "$PKG/usr/share/doc/strongtalk/copyright"
+install -m 644 "$TOP/NOTICE" "$TOP/LICENSE-0BSD" "$TOP/THIRD-PARTY-NOTICES.txt" "$PKG/usr/share/doc/strongtalk/"
+chmod 644 "$PKG/usr/share/doc/strongtalk/copyright"
 mkdir -p "$PKG/DEBIAN"
 cat > "$PKG/DEBIAN/control" <<CONTROL
 Package: strongtalk

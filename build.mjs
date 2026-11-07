@@ -35,6 +35,10 @@ try {
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 cpSync(webDir, dist, { recursive: true });
+// the license files, linked from every page's footer
+for (const [src, served] of [['LICENSE', 'LICENSE.txt'], ['LICENSE-0BSD', 'LICENSE-0BSD.txt'], ['THIRD-PARTY-NOTICES.txt', 'THIRD-PARTY-NOTICES.txt']]) {
+  cpSync(join(root, src), join(dist, served));
+}
 // the Strongtalk sources of the class library, for reading or downloading
 cpSync(join(vmDir, 'lib'), join(dist, 'try', 'lib'), { recursive: true });
 

@@ -51,7 +51,8 @@ jobs:
         run: |
           VERSION=$(grep -m1 '^version' vm/Cargo.toml | cut -d'"' -f2)
           packaging/macos/build-pkg.sh out/strongtalk "$VERSION" out/strongtalk-macos-universal.pkg
-          tar -czf out/strongtalk-macos-universal.tar.gz -C out strongtalk
+          cp LICENSE LICENSE-0BSD THIRD-PARTY-NOTICES.txt out/
+          tar -czf out/strongtalk-macos-universal.tar.gz -C out strongtalk LICENSE LICENSE-0BSD THIRD-PARTY-NOTICES.txt
       - uses: actions/upload-artifact@v4
         with:
           name: macos
@@ -91,7 +92,8 @@ jobs:
       - name: Package
         run: |
           VERSION=$(grep -m1 '^version' vm/Cargo.toml | cut -d'"' -f2)
-          tar -czf out/strongtalk-linux-${{ matrix.arch }}.tar.gz -C out strongtalk
+          cp LICENSE LICENSE-0BSD THIRD-PARTY-NOTICES.txt out/
+          tar -czf out/strongtalk-linux-${{ matrix.arch }}.tar.gz -C out strongtalk LICENSE LICENSE-0BSD THIRD-PARTY-NOTICES.txt
           packaging/linux/build-deb.sh out/strongtalk "$VERSION" ${{ matrix.deb }} out/strongtalk-linux-${{ matrix.arch }}.deb
           dpkg-deb --info out/strongtalk-linux-${{ matrix.arch }}.deb
       - uses: actions/upload-artifact@v4
@@ -117,7 +119,11 @@ jobs:
           out/strongtalk.exe -e '3 + 4 * 2'
       - name: Portable zip
         shell: pwsh
-        run: Compress-Archive -Path out/strongtalk.exe -DestinationPath out/strongtalk-windows-x64.zip
+        run: |
+          Copy-Item LICENSE out/LICENSE.txt
+          Copy-Item LICENSE-0BSD out/LICENSE-0BSD.txt
+          Copy-Item THIRD-PARTY-NOTICES.txt out/THIRD-PARTY-NOTICES.txt
+          Compress-Archive -Path out/strongtalk.exe, out/LICENSE.txt, out/LICENSE-0BSD.txt, out/THIRD-PARTY-NOTICES.txt -DestinationPath out/strongtalk-windows-x64.zip
       - name: Installer
         shell: pwsh
         run: |
@@ -167,6 +173,9 @@ jobs:
 
           Or in a terminal: \`curl -fsSL https://volland.github.io/strongtalk/install.sh | sh\` (macOS, Linux),
           \`irm https://volland.github.io/strongtalk/install.ps1 | iex\` (Windows PowerShell).
+
+          Free software: BSD 3-Clause, the license Sun Microsystems released Strongtalk under (see LICENSE);
+          the website, translator and tooling are also available under 0BSD (LICENSE-0BSD).
 
           The programs are not code-signed yet: on macOS Control-click the .pkg and choose Open; on Windows choose
           *More info → Run anyway* if SmartScreen warns.

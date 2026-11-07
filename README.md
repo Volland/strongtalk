@@ -65,6 +65,16 @@ The WebAssembly VM in `web/try/pkg` is committed prebuilt, so after changing the
   `strongtalk --typecheck`, `strongtalk --bench`.
 * Double-click **Strongtalk Web.command** to open the WebAssembly website in your browser.
 
+## License
+
+Free software under the **BSD 3-Clause license** ([LICENSE](LICENSE)), the license Sun Microsystems released
+Strongtalk under in 2006; Sun's copyright notice is kept because this edition was made by studying the original
+system. The parts that are entirely new work (the website, the TypeScript translator, the highlighter, packaging and
+scripts) may also be used under the **Zero-Clause BSD license** ([LICENSE-0BSD](LICENSE-0BSD)), with no conditions at
+all. The Rust libraries the program is built with are MIT / Apache-2.0 licensed: see
+[THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) (regenerate with `python3 scripts/third-party-notices.py`).
+`strongtalk --license` prints all of it.
+
 ## Building
 
     npm run build          # WebAssembly VM + website into dist/

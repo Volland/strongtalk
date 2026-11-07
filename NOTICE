@@ -1,0 +1,14 @@
+Strongtalk (Rust and WebAssembly edition)
+
+Strongtalk was created by Animorphic Systems (LongView Technologies) and released
+as open source by Sun Microsystems in 2006 under the BSD 3-Clause license in
+LICENSE. This edition
+re-implements it in Rust; it keeps Sun's license and notice because it was made by
+studying the original Strongtalk system.
+
+Parts of this repository that are entirely new work and contain nothing derived
+from Sun's Strongtalk may also be used under the Zero-Clause BSD license, which
+asks for nothing at all: see LICENSE-0BSD for the list.
+
+The program includes open-source Rust libraries under their own permissive
+licenses (MIT / Apache-2.0); see THIRD-PARTY-NOTICES.txt.

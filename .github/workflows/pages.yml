@@ -30,6 +30,9 @@ jobs:
           cp -R web/. _site/
           mkdir -p _site/try/lib
           cp -R vm/lib/. _site/try/lib/
+          cp LICENSE _site/LICENSE.txt
+          cp LICENSE-0BSD _site/LICENSE-0BSD.txt
+          cp THIRD-PARTY-NOTICES.txt _site/THIRD-PARTY-NOTICES.txt
           touch _site/.nojekyll
           test -f _site/try/pkg/strongtalk_bg.wasm
       - uses: actions/configure-pages@v5

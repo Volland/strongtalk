@@ -30,6 +30,15 @@ fn main() {
     for (_, p) in &files {
         println!("cargo:rerun-if-changed={}", p.display());
     }
+    // the license files, served next to the site as in the online version
+    let top = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    for (src, served) in [("LICENSE", "LICENSE.txt"), ("LICENSE-0BSD", "LICENSE-0BSD.txt"), ("THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.txt")] {
+        let p = top.join(src);
+        if p.is_file() {
+            println!("cargo:rerun-if-changed={}", p.display());
+            files.push((served.to_string(), fs::canonicalize(&p).unwrap_or(p)));
+        }
+    }
     let mut code = String::from("pub static WEB_ASSETS: &[(&str, &[u8])] = &[\n");
     for (rel, p) in &files {
         code.push_str(&format!("    ({:?}, include_bytes!({:?})),\n", rel, p.display().to_string()));

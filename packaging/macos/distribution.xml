@@ -2,6 +2,7 @@
 <installer-gui-script minSpecVersion="2">
   <title>Strongtalk @VERSION@</title>
   <welcome file="welcome.html" mime-type="text/html"/>
+  <license file="LICENSE.txt" mime-type="text/plain"/>
   <conclusion file="conclusion.html" mime-type="text/html"/>
   <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
   <domains enable_localSystem="true"/>

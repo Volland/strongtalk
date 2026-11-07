@@ -1,8 +1,9 @@
 [package]
 name = "strongtalk"
-version = "2.1.0"
+version = "2.1.1"
 edition = "2021"
 build = "build.rs"
+license = "BSD-3-Clause"
 repository = "https://github.com/Volland/strongtalk"
 description = "A Strongtalk (typed Smalltalk) environment re-implemented in Rust"
 

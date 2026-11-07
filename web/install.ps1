@@ -12,6 +12,7 @@ Invoke-WebRequest -Uri $url -OutFile (Join-Path $tmp 'st.zip') -UseBasicParsing
 Expand-Archive -Path (Join-Path $tmp 'st.zip') -DestinationPath $tmp -Force
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
 Copy-Item (Join-Path $tmp 'strongtalk.exe') (Join-Path $dir 'strongtalk.exe') -Force
+Get-ChildItem $tmp -Filter '*.txt' | Copy-Item -Destination $dir -Force
 Remove-Item -Recurse -Force $tmp
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 if (-not ($userPath -split ';' | Where-Object { $_ -eq $dir })) {
