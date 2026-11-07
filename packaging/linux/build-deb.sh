@@ -23,4 +23,4 @@ Description: Strongtalk, the typed Smalltalk, re-implemented in Rust
  (strongtalk --to-ts), and the full graphical environment, which
  "strongtalk web" opens in a browser, offline.
 CONTROL
-dpkg-deb --build --root-owner-group "$PKG" "$OUT"
+dpkg-deb -Zxz --build --root-owner-group "$PKG" "$OUT"
